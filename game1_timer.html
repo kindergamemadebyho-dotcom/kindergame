@@ -99,11 +99,11 @@
 
         // 회전 또는 생성
         if (targetIndex > -1) {
-            // 15도(Math.PI / 12)씩 회전
-            blocks[targetIndex].rotation = (blocks[targetIndex].rotation || 0) + (Math.PI / 12);
+            // 30도(Math.PI / 6)씩 회전
+            blocks[targetIndex].rotation = (blocks[targetIndex].rotation || 0) + (Math.PI / 6);
         } else {
             // 새 장애물 생성
-            blocks.push({ x: x - 40, y: y - 30, w: 80, h: 60, rotation: 0 });
+            blocks.push({ x: x - 40, y: y - 30, w: 100, h: 60, rotation: 0 });
         }
     });
 
