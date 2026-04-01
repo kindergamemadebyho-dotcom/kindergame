@@ -60,214 +60,255 @@
         </div>
     </div>
 
-    <script>
-        const itemIcons = ['🧸', '🚗', '🎨', '🧩', '⚽', '🎺', '🚂', '🚁', '🧁', '📖', '🖍️', '🧱', '👟', '🧹'];
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const bgImage = new Image();
-        bgImage.src = 'image_0.png'; 
+<script>
+    const itemIcons = ['🧸', '🚗', '🎨', '🧩', '⚽', '🎺', '🚂', '🚁', '🧁', '📖', '🖍️', '🧱', '👟', '🧹'];
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const bgImage = new Image();
+    bgImage.src = 'image_0.png'; 
 
-        let treasures = [], players = [], playerPhotos = [], blocks = [];
-        let timeLeft = 0, totalTime = 0, timerInterval, gameActive = false, isEditMode = false;
-        const basket = { x: 0, y: 0 };
-        let audioCtx;
+    let treasures = [], players = [], playerPhotos = [], blocks = [];
+    let timeLeft = 0, totalTime = 0, timerInterval, gameActive = false, isEditMode = false;
+    let lastClickTime = 0; // 더블 클릭 판정용
+    const basket = { x: 0, y: 0 };
+    let audioCtx;
 
-        async function startInit() {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
+    // --- [추가] 마우스 클릭 이벤트 (교실 편집 로직) ---
+    canvas.addEventListener('mousedown', (e) => {
+        if (!isEditMode) return;
 
-            const files = document.getElementById('photoInput').files;
-            playerPhotos = [];
-            for (let file of files) {
-                const img = new Image();
-                img.src = URL.createObjectURL(file);
-                await new Promise(r => img.onload = r);
-                playerPhotos.push(img);
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const currentTime = Date.now();
+
+        // 클릭한 위치에 장애물이 있는지 확인
+        const targetIndex = blocks.findIndex(b => 
+            x > b.x && x < b.x + b.w && y > b.y && y < b.y + b.h
+        );
+
+        // 더블 클릭 판정 (0.3초 이내 재클릭 시 삭제)
+        if (currentTime - lastClickTime < 300) {
+            if (targetIndex > -1) {
+                blocks.splice(targetIndex, 1);
             }
-            const bgmFile = document.getElementById('bgmFileInput').files[0];
-            if (bgmFile) { 
-                const bgm = document.getElementById('customBgm');
-                bgm.src = URL.createObjectURL(bgmFile); 
-                bgm.playbackRate = 1.0;
-                bgm.play(); 
-            }
-            document.getElementById('setupScreen').classList.add('hidden');
-            document.getElementById('gameUI').classList.remove('hidden');
-            setupGame();
+            lastClickTime = 0;
+            return;
+        }
+        lastClickTime = currentTime;
+
+        // 회전 또는 생성
+        if (targetIndex > -1) {
+            // 15도(Math.PI / 12)씩 회전
+            blocks[targetIndex].rotation = (blocks[targetIndex].rotation || 0) + (Math.PI / 12);
+        } else {
+            // 새 장애물 생성
+            blocks.push({ x: x - 40, y: y - 30, w: 80, h: 60, rotation: 0 });
+        }
+    });
+
+    async function startInit() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const files = document.getElementById('photoInput').files;
+        playerPhotos = [];
+        for (let file of files) {
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
+            await new Promise(r => img.onload = r);
+            playerPhotos.push(img);
         }
 
-        function toggleEditMode() {
-            isEditMode = !isEditMode;
-            document.getElementById('editBtn').innerText = isEditMode ? '✅ 편집 완료' : '🧱 교실 편집';
-        }
+        const bgmFile = document.getElementById('bgmFileInput').files[0];
+        const bgm = document.getElementById('customBgm');
+        if (bgmFile) { bgm.src = URL.createObjectURL(bgmFile); } 
+        else { bgm.src = 'bgm.mp3'; }
 
-        function setupGame() {
-            resize();
-            const namesInput = document.getElementById('namesInput').value;
-            const names = namesInput ? namesInput.split(',').map(n => n.trim()).filter(n => n) : [];
-            const count = Math.max(names.length, playerPhotos.length);
-            if(count === 0) return;
+        bgm.playbackRate = 1.0;
+        bgm.play().catch(e => console.log("재생 오류:", e));
+        document.getElementById('setupScreen').classList.add('hidden');
+        document.getElementById('gameUI').classList.remove('hidden');
+        setupGame();
+    }
 
-            treasures = []; players = [];
-            for(let i=0; i < count * 3; i++) treasures.push(createTreasureData());
-            for(let i=0; i < count; i++) {
-                players.push({
-                    name: names[i] || "", x: Math.random() * canvas.width, y: Math.random() * canvas.height,
-                    photo: playerPhotos[i] || null, color: `hsl(${(i * 360/count)}, 75%, 70%)`,
-                    baseSpeed: 1.6 + Math.random() * 0.4,
-                    speed: 0, target: null, carrying: null, tick: Math.random() * 10
-                });
-            }
-            totalTime = (parseFloat(document.getElementById('timeInput').value) || 1) * 60;
-            timeLeft = totalTime;
-            gameActive = true;
-            startTimer();
-            requestAnimationFrame(render);
-        }
+    function toggleEditMode() {
+        isEditMode = !isEditMode;
+        document.getElementById('editBtn').innerText = isEditMode ? '✅ 편집 완료' : '🧱 교실 편집';
+    }
 
-        function createTreasureData() {
-            return { x: 50+Math.random()*(canvas.width-100), y: 50+Math.random()*(canvas.height-100), icon: itemIcons[Math.floor(Math.random()*itemIcons.length)], state: 'floor' };
-        }
+    function setupGame() {
+        resize();
+        const namesInput = document.getElementById('namesInput').value;
+        const names = namesInput ? namesInput.split(',').map(n => n.trim()).filter(n => n) : [];
+        const count = Math.max(names.length, playerPhotos.length);
+        if(count === 0) return;
 
-        function startTimer() {
-            if (timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                if (timeLeft > 0) {
-                    timeLeft--;
-                    const m = Math.floor(timeLeft/60), s = Math.floor(timeLeft%60);
-                    document.getElementById('timerDisplay').innerText = `${m}:${s.toString().padStart(2,'0')}`;
-                } else {
-                    clearInterval(timerInterval);
-                    endGame(false); 
-                }
-            }, 1000);
-        }
-
-        function playFailSound() {
-            if (!audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.8);
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.8);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.8);
-        }
-
-        function endGame(success) {
-            if (!gameActive) return;
-            gameActive = false;
-            clearInterval(timerInterval);
-            const bgm = document.getElementById('customBgm');
-            bgm.pause();
-
-            if(success) {
-                const end = Date.now() + 3000;
-                const frame = () => {
-                    confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 } });
-                    confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 } });
-                    if (Date.now() < end) requestAnimationFrame(frame);
-                    else { alert("정리 완료! 🥇"); location.reload(); }
-                };
-                frame();
-            } else {
-                playFailSound();
-                setTimeout(() => {
-                    alert("정리 실패했습니다! 😭 다시 도전해 봐요!");
-                    location.reload();
-                }, 200);
-            }
-        }
-
-        function resize() { 
-            canvas.width = window.innerWidth; canvas.height = window.innerHeight; 
-            basket.x = canvas.width/2; basket.y = canvas.height * 0.75; 
-        }
-        window.onresize = resize;
-
-        function render() {
-            if (!gameActive) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            if (bgImage.complete) ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
-
-            let playerSpeedMult = 1;
-            let bgmSpeedMult = 1.0;
-            let overlayColor = null;
-            let showText = false;
-            
-            // --- 가속 단계 설정 ---
-            if (timeLeft <= totalTime / 8) { 
-                playerSpeedMult = 5; bgmSpeedMult = 1.8; // 노래는 1.8배만
-                overlayColor = 'rgba(255, 0, 0, 0.3)'; showText = true;
-            } else if (timeLeft <= totalTime / 6) { 
-                playerSpeedMult = 4; bgmSpeedMult = 1.6;
-                overlayColor = 'rgba(255, 165, 0, 0.3)';
-            } else if (timeLeft <= totalTime / 4) { 
-                playerSpeedMult = 3; bgmSpeedMult = 1.4;
-            } else if (timeLeft <= totalTime / 2) { 
-                playerSpeedMult = 2; bgmSpeedMult = 1.2;
-            }
-
-            // 배경음악 속도 적용 (완만하게 증가)
-            const bgm = document.getElementById('customBgm');
-            if (bgm && !bgm.paused) { bgm.playbackRate = bgmSpeedMult; }
-
-            if (overlayColor && Math.floor(Date.now() / 300) % 2 === 0) {
-                ctx.fillStyle = overlayColor;
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-            }
-
-            // 바구니
-            ctx.fillStyle = 'rgba(59, 130, 246, 0.7)'; ctx.beginPath();
-            ctx.roundRect(basket.x-70, basket.y-40, 140, 80, 15); ctx.fill();
-            ctx.fillStyle = 'white'; ctx.font = "bold 24px Gaegu"; ctx.textAlign = "center";
-            ctx.fillText("🧺 정리 바구니", basket.x, basket.y + 10);
-
-            // 아이템
-            ctx.font = "45px Arial"; 
-            treasures.forEach(t => { if (t.state === 'floor') ctx.fillText(t.icon, t.x, t.y); });
-
-            // 아이들 이동 로직
-            players.forEach(p => {
-                p.speed = p.baseSpeed * playerSpeedMult;
-                if (!p.carrying && (!p.target || p.target.state !== 'floor')) {
-                    const avail = treasures.filter(t => t.state === 'floor');
-                    if (avail.length > 0) p.target = avail[Math.floor(Math.random() * avail.length)];
-                }
-                let tx = p.carrying ? basket.x : (p.target ? p.target.x : p.x);
-                let ty = p.carrying ? basket.y : (p.target ? p.target.y : p.y);
-                let dx = tx - p.x, dy = ty - p.y, d = Math.sqrt(dx*dx + dy*dy);
-
-                if (d > 10) {
-                    p.x += (dx/d)*p.speed; p.y += (dy/d)*p.speed;
-                } else {
-                    if (p.carrying) { p.carrying.state = 'hidden'; const t = p.carrying; p.carrying = null; setTimeout(() => { if(gameActive) Object.assign(t, createTreasureData()); }, 6000); }
-                    else if (p.target) { p.target.state = 'held'; p.carrying = p.target; p.target = null; }
-                }
-                p.tick += (0.15 * playerSpeedMult);
-                const jump = Math.abs(Math.sin(p.tick)) * 10;
-                ctx.save();
-                ctx.translate(p.x, p.y - jump);
-                ctx.beginPath(); ctx.arc(0, 0, 42, 0, Math.PI*2); ctx.clip();
-                if(p.photo) ctx.drawImage(p.photo, -42, -42, 84, 84);
-                else { ctx.fillStyle = p.color; ctx.fill(); }
-                ctx.restore();
-                ctx.strokeStyle = "white"; ctx.lineWidth = 4;
-                ctx.beginPath(); ctx.arc(p.x, p.y - jump, 42, 0, Math.PI*2); ctx.stroke();
-                if(p.name) { ctx.fillStyle="#1e3a8a"; ctx.font="bold 22px Gaegu"; ctx.fillText(p.name, p.x, p.y + 70 - jump); }
-                if(p.carrying) { ctx.font = "45px Arial"; ctx.fillText(p.carrying.icon, 0, -45); }
+        treasures = []; players = [];
+        for(let i=0; i < count * 3; i++) treasures.push(createTreasureData());
+        for(let i=0; i < count; i++) {
+            players.push({
+                name: names[i] || "", x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+                photo: playerPhotos[i] || null, color: `hsl(${(i * 360/count)}, 75%, 70%)`,
+                baseSpeed: 1.6 + Math.random() * 0.4,
+                speed: 0, target: null, carrying: null, tick: Math.random() * 10
             });
-
-            if (showText) {
-                ctx.fillStyle = "red"; ctx.font = "bold 80px Gaegu"; ctx.textAlign = "center";
-                if (Math.floor(Date.now() / 250) % 2 === 0) {
-                    ctx.fillText("🚨 초비상! 정리하세요! 🚨", canvas.width / 2, canvas.height / 2 - 100);
-                }
-            }
-            requestAnimationFrame(render);
         }
-    </script>
+        totalTime = (parseFloat(document.getElementById('timeInput').value) || 1) * 60;
+        timeLeft = totalTime;
+        gameActive = true;
+        startTimer();
+        requestAnimationFrame(render);
+    }
+
+    function createTreasureData() {
+        return { x: 50+Math.random()*(canvas.width-100), y: 50+Math.random()*(canvas.height-100), icon: itemIcons[Math.floor(Math.random()*itemIcons.length)], state: 'floor' };
+    }
+
+    function startTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            if (timeLeft > 0) {
+                timeLeft--;
+                const m = Math.floor(timeLeft/60), s = Math.floor(timeLeft%60);
+                document.getElementById('timerDisplay').innerText = `${m}:${s.toString().padStart(2,'0')}`;
+            } else {
+                clearInterval(timerInterval);
+                endGame(false); 
+            }
+        }, 1000);
+    }
+
+    function endGame(success) {
+        if (!gameActive) return;
+        gameActive = false;
+        clearInterval(timerInterval);
+        const bgm = document.getElementById('customBgm');
+        bgm.pause();
+
+        if(success) {
+            const end = Date.now() + 3000;
+            const frame = () => {
+                confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 } });
+                confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 } });
+                if (Date.now() < end) requestAnimationFrame(frame);
+                else { alert("정리 완료! 🥇"); location.reload(); }
+            };
+            frame();
+        } else {
+            if (audioCtx) {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.8);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.8);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.8);
+            }
+            setTimeout(() => { alert("정리 실패했습니다! 😭 다시 도전해 봐요!"); location.reload(); }, 200);
+        }
+    }
+
+    function resize() { 
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight; 
+        basket.x = canvas.width/2; basket.y = canvas.height * 0.75; 
+    }
+    window.onresize = resize;
+
+    function render() {
+        if (!gameActive) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (bgImage.complete) ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+
+        let playerSpeedMult = 1;
+        let bgmSpeedMult = 1.0;
+        let overlayColor = null;
+        let showText = false;
+        
+        if (timeLeft <= totalTime / 8) { playerSpeedMult = 5; bgmSpeedMult = 1.8; overlayColor = 'rgba(255, 0, 0, 0.3)'; showText = true; } 
+        else if (timeLeft <= totalTime / 6) { playerSpeedMult = 4; bgmSpeedMult = 1.6; overlayColor = 'rgba(255, 165, 0, 0.3)'; } 
+        else if (timeLeft <= totalTime / 4) { playerSpeedMult = 3; bgmSpeedMult = 1.4; } 
+        else if (timeLeft <= totalTime / 2) { playerSpeedMult = 2; bgmSpeedMult = 1.2; }
+
+        const bgm = document.getElementById('customBgm');
+        if (bgm && !bgm.paused) { bgm.playbackRate = bgmSpeedMult; }
+
+        if (overlayColor && Math.floor(Date.now() / 300) % 2 === 0) {
+            ctx.fillStyle = overlayColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // --- 장애물(책상) 그리기 ---
+        blocks.forEach(b => {
+            ctx.save();
+            ctx.translate(b.x + b.w / 2, b.y + b.h / 2);
+            ctx.rotate(b.rotation || 0);
+            ctx.fillStyle = '#92400e';
+            ctx.strokeStyle = '#451a03';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.roundRect(-b.w / 2, -b.h / 2, b.w, b.h, 10);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            ctx.fillRect(-b.w / 2 + 10, -b.h / 2 + 10, b.w - 20, 5);
+            ctx.restore();
+        });
+
+        // 바구니
+        ctx.fillStyle = 'rgba(59, 130, 246, 0.7)'; ctx.beginPath();
+        ctx.roundRect(basket.x-70, basket.y-40, 140, 80, 15); ctx.fill();
+        ctx.fillStyle = 'white'; ctx.font = "bold 24px Gaegu"; ctx.textAlign = "center";
+        ctx.fillText("🧺 정리 바구니", basket.x, basket.y + 10);
+
+        // 아이템
+        ctx.font = "45px Arial"; 
+        treasures.forEach(t => { if (t.state === 'floor') ctx.fillText(t.icon, t.x, t.y); });
+
+        // 아이들 이동
+        players.forEach(p => {
+            p.speed = p.baseSpeed * playerSpeedMult;
+            if (!p.carrying && (!p.target || p.target.state !== 'floor')) {
+                const avail = treasures.filter(t => t.state === 'floor');
+                if (avail.length > 0) p.target = avail[Math.floor(Math.random() * avail.length)];
+            }
+            let tx = p.carrying ? basket.x : (p.target ? p.target.x : p.x);
+            let ty = p.carrying ? basket.y : (p.target ? p.target.y : p.y);
+            let dx = tx - p.x, dy = ty - p.y, d = Math.sqrt(dx*dx + dy*dy);
+
+            if (d > 10) {
+                let nextX = p.x + (dx/d) * p.speed;
+                let nextY = p.y + (dy/d) * p.speed;
+                // 장애물 충돌 회피 (간단 버전)
+                let collision = blocks.some(b => nextX > b.x - 20 && nextX < b.x + b.w + 20 && nextY > b.y - 20 && nextY < b.y + b.h + 20);
+                if (!collision) { p.x = nextX; p.y = nextY; } 
+                else { p.x += (dy/d) * p.speed; p.y -= (dx/d) * p.speed; }
+            } else {
+                if (p.carrying) { p.carrying.state = 'hidden'; const t = p.carrying; p.carrying = null; setTimeout(() => { if(gameActive) Object.assign(t, createTreasureData()); }, 6000); }
+                else if (p.target) { p.target.state = 'held'; p.carrying = p.target; p.target = null; }
+            }
+            p.tick += (0.15 * playerSpeedMult);
+            const jump = Math.abs(Math.sin(p.tick)) * 10;
+            ctx.save();
+            ctx.translate(p.x, p.y - jump);
+            ctx.beginPath(); ctx.arc(0, 0, 42, 0, Math.PI*2); ctx.clip();
+            if(p.photo) ctx.drawImage(p.photo, -42, -42, 84, 84);
+            else { ctx.fillStyle = p.color; ctx.fill(); }
+            ctx.restore();
+            ctx.strokeStyle = "white"; ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.arc(p.x, p.y - jump, 42, 0, Math.PI*2); ctx.stroke();
+            if(p.name) { ctx.fillStyle="#1e3a8a"; ctx.font="bold 22px Gaegu"; ctx.fillText(p.name, p.x, p.y + 70 - jump); }
+            if(p.carrying) { ctx.font = "45px Arial"; ctx.fillText(p.carrying.icon, 0, -45); }
+        });
+
+        if (showText) {
+            ctx.fillStyle = "red"; ctx.font = "bold 80px Gaegu"; ctx.textAlign = "center";
+            if (Math.floor(Date.now() / 250) % 2 === 0) { ctx.fillText("🚨 초비상! 정리하세요! 🚨", canvas.width / 2, canvas.height / 2 - 100); }
+        }
+        requestAnimationFrame(render);
+    }
+</script>
 </body>
 </html>
