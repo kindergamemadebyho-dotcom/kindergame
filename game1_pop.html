@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>벚꽃 팝콘</title>
+  <link rel="stylesheet" href="style.css">
+
+ <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+ <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+</head>
+<body>
+<body>
+<audio id="bgm" src="spring.mp3" loop></audio>
+<audio id="eatSound" src="pop.mp3" preload="auto"></audio> 
+
+<video id="input_video" autoplay playsinline></video>
+
+<canvas id="canvas"></canvas>
+
+<div id="startContainer">
+  <div id="timeSelect">
+    ⏰ 시간 선택
+    <select id="timeOption">
+      <option value="60">1분</option>
+      <option value="120">2분</option>
+      <option value="180">3분</option>
+    </select>
+  </div>
+
+  <button id="startBtn">🌸 시작하기 🌸</button>
+</div>
+
+<div id="score">점수: 0</div>
+
+<script src="game.js"></script>
+</body>
+</html>

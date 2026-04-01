@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>🌸 봄날의 벚꽃 메모리 게임 🌸</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<style>
+:root {
+  --pink-bg: #FFF0F5;
+  --pink-main: #FFB7C5;
+  --pink-dark: #FF8DA1;
+  --leaf-green: #A7E99C;
+  --text: #5D4037;
+}
+
+body {
+  margin: 0; padding: 0;
+  font-family: 'Do Hyeon', sans-serif;
+  background-color: var(--pink-bg);
+  color: var(--text);
+  overflow: hidden;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#petal-canvas {
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none; z-index: 0;
+}
+
+/* 설정 화면 */
+#setup-screen, #result-screen {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 100;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: rgba(255, 240, 245, 0.9);
+}
+
+.setup-card, .result-card {
+  background: white; padding: 25px;
+  border-radius: 30px; border: 5px solid var(--pink-main);
+  box-shadow: 0 8px 0 var(--pink-dark);
+  text-align: center; width: 90%; max-width: 400px;
+}
+
+.upload-btn {
+  display: inline-block; padding: 12px 20px;
+  background: var(--pink-main); color: white;
+  border-radius: 50px; cursor: pointer;
+  margin: 15px 0; font-size: 1.1rem;
+}
+#photo-input { display: none; }
+
+/* 게임 화면 */
+#game-screen {
+  display: none; 
+  position: relative; z-index: 5;
+  flex-direction: column;
+  height: 100vh; width: 100vw;
+  box-sizing: border-box;
+}
+
+/* 상단 정보바 */
+#status-bar {
+  text-align: center; padding: 15px; font-size: 1.5rem; color: var(--pink-dark);
+}
+
+#game-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr); 
+  gap: 8px;
+  width: 95%; max-width: 1000px;
+  margin: auto;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.card {
+  aspect-ratio: 1 / 1;
+  position: relative;
+  cursor: pointer;
+  perspective: 1000px;
+}
+
+.card-inner {
+  position: relative; width: 100%; height: 100%;
+  transition: transform 0.5s; transform-style: preserve-3d;
+}
+.card.flipped .card-inner { transform: rotateY(180deg); }
+
+.card-face {
+  position: absolute; width: 100%; height: 100%;
+  backface-visibility: hidden; border-radius: 12px;
+  border: 3px solid var(--pink-main);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+}
+
+.card-back { background-color: var(--pink-main); color: white; font-size: 1.5rem; }
+.card-front { background-color: white; transform: rotateY(180deg); overflow: hidden; }
+.card-front img { width: 100%; height: 100%; object-fit: cover; }
+.card-front.bonus { background: #fff5f7; font-size: 2.5rem; }
+
+.bottom-bar {
+  display: flex; justify-content: center; gap: 10px;
+  padding: 20px; z-index: 10;
+}
+button {
+  padding: 12px 25px; border: none; border-radius: 15px;
+  font-family: 'Do Hyeon'; cursor: pointer; font-size: 1.1rem;
+  transition: transform 0.1s;
+}
+button:active { transform: scale(0.95); }
+.btn-home { background: #eee; color: #777; }
+.btn-restart { background: var(--pink-dark); color: white; }
+
+/* 랭킹 리스트 스타일 */
+.ranking-list {
+  text-align: left; margin: 15px 0; padding: 0; list-style: none;
+}
+.ranking-item {
+  display: flex; justify-content: space-between;
+  padding: 5px 10px; border-bottom: 1px dashed var(--pink-main);
+}
+
+@media (max-width: 800px) { #game-grid { grid-template-columns: repeat(6, 1fr); } }
+@media (max-width: 500px) { #game-grid { grid-template-columns: repeat(4, 1fr); } }
+</style>
+</head>
+<body>
+
+<canvas id="petal-canvas"></canvas>
+
+<div id="setup-screen">
+  <div class="setup-card">
+    <h2 style="color:var(--pink-dark); margin:0 0 10px 0;">🌸 봄날의 기억 게임</h2>
+    <p style="font-size:0.9rem; color:#666;">사진을 선택하고 짝을 맞춰보세요!</p>
+    <label class="upload-btn" for="photo-input">📸 사진 선택 (여러 장)</label>
+    <input type="file" id="photo-input" accept="image/*" multiple onchange="handleFiles(this.files)">
+    <div id="file-count" style="margin-top:5px; font-size:0.8rem; color:var(--pink-dark);"></div>
+    <button id="start-btn" onclick="startGame()" style="margin-top:15px; display:none; background:var(--leaf-green); color:white; width:100%; font-size:1.3rem;">게임 시작!</button>
+  </div>
+</div>
+
+<div id="game-screen">
+  <div id="status-bar">시간: <span id="timer">0</span>초</div>
+  <div id="game-grid"></div>
+  <div class="bottom-bar">
+    <button class="btn-home" onclick="location.reload()">처음으로</button>
+    <button class="btn-restart" onclick="startGame()">다시하기</button>
+  </div>
+</div>
+
+<div id="result-screen" style="display:none;">
+  <div class="result-card">
+    <h2 style="color:var(--pink-dark);">🎉 축하합니다! 🎉</h2>
+    <p>기록: <span id="final-time" style="font-size:1.5rem; color:var(--leaf-green);">0</span>초</p>
+    <hr>
+    <h3>🏆 TOP 5 랭킹</h3>
+    <ul id="ranking-list" class="ranking-list"></ul>
+    <button onclick="location.reload()" style="background:var(--pink-main); color:white; width:100%;">다시 도전하기</button>
+  </div>
+</div>
+
+<script>
+let images = [];
+let flipped = [];
+let locked = false;
+let matchedCount = 0;
+let totalPairs = 0;
+
+// 타이머 변수
+let startTime;
+let timerInterval;
+
+function handleFiles(files) {
+  images = [];
+  const startBtn = document.getElementById('start-btn');
+  const countDisplay = document.getElementById('file-count');
+  let loaded = 0;
+  const fileArray = Array.from(files);
+  fileArray.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      images.push(e.target.result);
+      loaded++;
+      if (loaded === fileArray.length) {
+        countDisplay.textContent = `사진 ${images.length}쌍 준비 완료!`;
+        startBtn.style.display = 'block';
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function startGame() {
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('game-screen').style.display = 'flex';
+  
+  const grid = document.getElementById('game-grid');
+  grid.innerHTML = '';
+  flipped = [];
+  matchedCount = 0;
+  
+  let gameData = [];
+  images.forEach((img, index) => {
+    gameData.push({ id: 'img_' + index, content: img, isBonus: false });
+    gameData.push({ id: 'img_' + index, content: img, isBonus: false });
+  });
+
+  let cols = window.innerWidth <= 500 ? 4 : (window.innerWidth <= 800 ? 6 : 8);
+  const bonusIcons = ['🌸', '🌷', '🦋', '🌱', '☀️', '🎈'];
+  let iconIdx = 0;
+  let targetTotal = Math.max(gameData.length, cols * 2);
+  while (targetTotal % cols !== 0) targetTotal++;
+
+  while (gameData.length < targetTotal) {
+    const icon = bonusIcons[iconIdx % bonusIcons.length];
+    gameData.push({ id: 'bonus_' + icon, content: icon, isBonus: true });
+    gameData.push({ id: 'bonus_' + icon, content: icon, isBonus: true });
+    iconIdx++;
+  }
+
+  totalPairs = gameData.length / 2;
+  gameData.sort(() => Math.random() - 0.5);
+
+  gameData.forEach((data) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-inner">
+        <div class="card-face card-back">🌸</div>
+        <div class="card-face card-front ${data.isBonus ? 'bonus' : ''}">
+          ${data.isBonus ? `<span>${data.content}</span>` : `<img src="${data.content}">`}
+        </div>
+      </div>`;
+    card.onclick = () => flipCard(card, data);
+    grid.appendChild(card);
+  });
+
+  // 타이머 시작
+  resetTimer();
+  startTimer();
+}
+
+function startTimer() {
+  startTime = Date.now();
+  timerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    document.getElementById('timer').textContent = elapsed;
+  }, 1000);
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  document.getElementById('timer').textContent = '0';
+}
+
+function flipCard(el, data) {
+  if (locked || el.classList.contains('flipped')) return;
+  el.classList.add('flipped');
+  flipped.push({ el, data });
+
+  if (flipped.length === 2) {
+    locked = true;
+    if (flipped[0].data.id === flipped[1].data.id) {
+      matchedCount++;
+      flipped = [];
+      locked = false;
+      if (matchedCount === totalPairs) endGame();
+    } else {
+      setTimeout(() => {
+        flipped[0].el.classList.remove('flipped');
+        flipped[1].el.classList.remove('flipped');
+        flipped = [];
+        locked = false;
+      }, 700);
+    }
+  }
+}
+
+function endGame() {
+  clearInterval(timerInterval);
+  const finalTime = document.getElementById('timer').textContent;
+  document.getElementById('final-time').textContent = finalTime;
+
+  // 1. 꽃가루 팡팡! (라이브러리 사용)
+  const duration = 3 * 1000;
+  const animationEnd = Date.now() + duration;
+  const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+  const interval = setInterval(function() {
+    const timeLeft = animationEnd - Date.now();
+    if (timeLeft <= 0) return clearInterval(interval);
+    const particleCount = 50 * (timeLeft / duration);
+    confetti({ ...defaults, particleCount, origin: { x: 0.1, y: 0.5 } });
+    confetti({ ...defaults, particleCount, origin: { x: 0.9, y: 0.5 } });
+  }, 250);
+
+  // 2. 랭킹 등록
+  setTimeout(() => {
+    const name = prompt("축하합니다! 이름을 입력해서 랭킹에 등록하세요.", "익명의 봄꽃");
+    if (name) saveRanking(name, parseInt(finalTime));
+    showRanking();
+    document.getElementById('result-screen').style.display = 'flex';
+  }, 1000);
+}
+
+function saveRanking(name, time) {
+  let rankings = JSON.parse(localStorage.getItem('cherryRanking')) || [];
+  rankings.push({ name, time });
+  rankings.sort((a, b) => a.time - b.time); // 시간 짧은 순
+  rankings = rankings.slice(0, 5); // 5위까지만
+  localStorage.setItem('cherryRanking', JSON.stringify(rankings));
+}
+
+function showRanking() {
+  const list = document.getElementById('ranking-list');
+  const rankings = JSON.parse(localStorage.getItem('cherryRanking')) || [];
+  list.innerHTML = rankings.map((r, i) => `
+    <li class="ranking-item">
+      <span>${i+1}위. ${r.name}</span>
+      <span>${r.time}초</span>
+    </li>
+  `).join('');
+}
+
+// 벚꽃 배경 효과 (기존 코드 유지)
+const canvas = document.getElementById('petal-canvas');
+const ctx = canvas.getContext('2d');
+let petals = [];
+function updatePetals() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  if (petals.length < 20) {
+    petals.push({ x: Math.random()*canvas.width, y: -10, s: Math.random()*4+4, sp: Math.random()*1.5+0.5 });
+  }
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  petals.forEach((p, i) => {
+    p.y += p.sp; p.x += Math.sin(p.y/50);
+    ctx.fillStyle = '#FFB7C5';
+    ctx.globalAlpha = 0.5;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.s, 0, Math.PI*2); ctx.fill();
+    if (p.y > canvas.height) petals.splice(i, 1);
+  });
+  requestAnimationFrame(updatePetals);
+}
+updatePetals();
+</script>
+</body>
+</html>

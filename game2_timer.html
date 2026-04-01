@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>우리반 정리 정돈 대장 🧹</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap');
+        body { margin: 0; overflow: hidden; font-family: 'Gaegu', cursive; user-select: none; background: #000; }
+        canvas { display: block; }
+        .ui-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; padding: 20px; }
+        .btn-interactive { pointer-events: auto; cursor: pointer; transition: all 0.2s; }
+        .btn-interactive:active { transform: scale(0.9); }
+        .screen { position: fixed; inset: 0; background: #fffbeb; z-index: 50; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .glass-card { background: white; border-radius: 2.5rem; border: 6px solid #f59e0b; max-width: 550px; width: 90%; padding: 2.5rem; box-shadow: 0 20px 50px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+
+    <div id="setupScreen" class="screen">
+        <div class="glass-card text-center">
+            <h1 class="text-5xl font-bold text-orange-600 mb-8">🥇 우리반 정리 정돈 대장 🧹</h1>
+            <div class="space-y-5 text-left">
+                <div>
+                    <label class="block font-bold text-gray-700 mb-1">👤 우리반 대원 명단 (쉼표로 구분)</label>
+                    <input id="namesInput" type="text" class="w-full p-3 border-2 border-orange-100 rounded-xl focus:outline-orange-400" placeholder="이름 없이 사진만 쓰려면 비워두세요.">
+                </div>
+                <div>
+                    <label class="block font-bold text-gray-700 mb-1">📸 대원 사진 선택 (여러 장 가능)</label>
+                    <input type="file" id="photoInput" multiple accept="image/*" class="w-full text-sm text-gray-500">
+                </div>
+                <div>
+                    <label class="block font-bold text-gray-700 mb-1">🎵 정리 노래 (파일을 선택해 주세요!)</label>
+                    <input type="file" id="bgmFileInput" accept="audio/*" class="w-full p-2 border-2 border-dashed border-orange-200 rounded-xl">
+                </div>
+                <div>
+                    <label class="block font-bold text-gray-700 mb-1">⌛ 정리 시간 (분)</label>
+                    <input type="number" id="timeInput" class="w-full p-3 border-2 border-orange-100 rounded-xl" value="1">
+                </div>
+                <button onclick="startInit()" class="btn-interactive bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-2xl text-2xl w-full shadow-xl mt-4">정리 시작! 🚀</button>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+    <audio id="customBgm" loop></audio>
+
+    <div id="gameUI" class="ui-overlay hidden">
+        <div class="flex justify-between items-start w-full mb-4">
+            <button onclick="location.reload()" class="btn-interactive bg-white/90 p-3 rounded-full border-2 border-orange-200 shadow-md">🏠 홈</button>
+            <div class="bg-white/90 px-10 py-3 rounded-full border-4 border-blue-500 shadow-xl">
+                <span id="timerDisplay" class="text-5xl font-bold text-blue-600 font-mono">01:00</span>
+            </div>
+            <button id="editBtn" onclick="toggleEditMode()" class="btn-interactive bg-blue-50 p-3 rounded-xl border-2 border-blue-400 font-bold text-blue-700 shadow-md">🧱 교실 편집</button>
+        </div>
+        <div class="flex justify-end w-full">
+            <button onclick="endGame(true)" class="btn-interactive bg-green-500 text-white font-bold py-4 px-8 rounded-2xl text-2xl shadow-2xl border-b-8 border-green-700">✨ 정리 정돈 완료!</button>
+        </div>
+    </div>
+
+    <script>
+        const itemIcons = ['🧸', '🚗', '🎨', '🧩', '⚽', '🎺', '🚂', '🚁', '🧁', '📖', '🖍️', '🧱', '👟', '🧹'];
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const bgImage = new Image();
+        bgImage.src = 'image_0.png'; 
+
+        let treasures = [], players = [], playerPhotos = [], blocks = [];
+        let timeLeft = 0, totalTime = 0, timerInterval, gameActive = false, isEditMode = false;
+        const basket = { x: 0, y: 0 };
+        let audioCtx;
+
+        async function startInit() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const files = document.getElementById('photoInput').files;
+            playerPhotos = [];
+            for (let file of files) {
+                const img = new Image();
+                img.src = URL.createObjectURL(file);
+                await new Promise(r => img.onload = r);
+                playerPhotos.push(img);
+            }
+            const bgmFile = document.getElementById('bgmFileInput').files[0];
+            if (bgmFile) { 
+                const bgm = document.getElementById('customBgm');
+                bgm.src = URL.createObjectURL(bgmFile); 
+                bgm.playbackRate = 1.0;
+                bgm.play(); 
+            }
+            document.getElementById('setupScreen').classList.add('hidden');
+            document.getElementById('gameUI').classList.remove('hidden');
+            setupGame();
+        }
+
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            document.getElementById('editBtn').innerText = isEditMode ? '✅ 편집 완료' : '🧱 교실 편집';
+        }
+
+        function setupGame() {
+            resize();
+            const namesInput = document.getElementById('namesInput').value;
+            const names = namesInput ? namesInput.split(',').map(n => n.trim()).filter(n => n) : [];
+            const count = Math.max(names.length, playerPhotos.length);
+            if(count === 0) return;
+
+            treasures = []; players = [];
+            for(let i=0; i < count * 3; i++) treasures.push(createTreasureData());
+            for(let i=0; i < count; i++) {
+                players.push({
+                    name: names[i] || "", x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+                    photo: playerPhotos[i] || null, color: `hsl(${(i * 360/count)}, 75%, 70%)`,
+                    baseSpeed: 1.6 + Math.random() * 0.4,
+                    speed: 0, target: null, carrying: null, tick: Math.random() * 10
+                });
+            }
+            totalTime = (parseFloat(document.getElementById('timeInput').value) || 1) * 60;
+            timeLeft = totalTime;
+            gameActive = true;
+            startTimer();
+            requestAnimationFrame(render);
+        }
+
+        function createTreasureData() {
+            return { x: 50+Math.random()*(canvas.width-100), y: 50+Math.random()*(canvas.height-100), icon: itemIcons[Math.floor(Math.random()*itemIcons.length)], state: 'floor' };
+        }
+
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    const m = Math.floor(timeLeft/60), s = Math.floor(timeLeft%60);
+                    document.getElementById('timerDisplay').innerText = `${m}:${s.toString().padStart(2,'0')}`;
+                } else {
+                    clearInterval(timerInterval);
+                    endGame(false); 
+                }
+            }, 1000);
+        }
+
+        function playFailSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.8);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.8);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.8);
+        }
+
+        function endGame(success) {
+            if (!gameActive) return;
+            gameActive = false;
+            clearInterval(timerInterval);
+            const bgm = document.getElementById('customBgm');
+            bgm.pause();
+
+            if(success) {
+                const end = Date.now() + 3000;
+                const frame = () => {
+                    confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 } });
+                    confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 } });
+                    if (Date.now() < end) requestAnimationFrame(frame);
+                    else { alert("정리 완료! 🥇"); location.reload(); }
+                };
+                frame();
+            } else {
+                playFailSound();
+                setTimeout(() => {
+                    alert("정리 실패했습니다! 😭 다시 도전해 봐요!");
+                    location.reload();
+                }, 200);
+            }
+        }
+
+        function resize() { 
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight; 
+            basket.x = canvas.width/2; basket.y = canvas.height * 0.75; 
+        }
+        window.onresize = resize;
+
+        function render() {
+            if (!gameActive) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (bgImage.complete) ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+
+            let playerSpeedMult = 1;
+            let bgmSpeedMult = 1.0;
+            let overlayColor = null;
+            let showText = false;
+            
+            // --- 가속 단계 설정 ---
+            if (timeLeft <= totalTime / 8) { 
+                playerSpeedMult = 5; bgmSpeedMult = 1.8; // 노래는 1.8배만
+                overlayColor = 'rgba(255, 0, 0, 0.3)'; showText = true;
+            } else if (timeLeft <= totalTime / 6) { 
+                playerSpeedMult = 4; bgmSpeedMult = 1.6;
+                overlayColor = 'rgba(255, 165, 0, 0.3)';
+            } else if (timeLeft <= totalTime / 4) { 
+                playerSpeedMult = 3; bgmSpeedMult = 1.4;
+            } else if (timeLeft <= totalTime / 2) { 
+                playerSpeedMult = 2; bgmSpeedMult = 1.2;
+            }
+
+            // 배경음악 속도 적용 (완만하게 증가)
+            const bgm = document.getElementById('customBgm');
+            if (bgm && !bgm.paused) { bgm.playbackRate = bgmSpeedMult; }
+
+            if (overlayColor && Math.floor(Date.now() / 300) % 2 === 0) {
+                ctx.fillStyle = overlayColor;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // 바구니
+            ctx.fillStyle = 'rgba(59, 130, 246, 0.7)'; ctx.beginPath();
+            ctx.roundRect(basket.x-70, basket.y-40, 140, 80, 15); ctx.fill();
+            ctx.fillStyle = 'white'; ctx.font = "bold 24px Gaegu"; ctx.textAlign = "center";
+            ctx.fillText("🧺 정리 바구니", basket.x, basket.y + 10);
+
+            // 아이템
+            ctx.font = "45px Arial"; 
+            treasures.forEach(t => { if (t.state === 'floor') ctx.fillText(t.icon, t.x, t.y); });
+
+            // 아이들 이동 로직
+            players.forEach(p => {
+                p.speed = p.baseSpeed * playerSpeedMult;
+                if (!p.carrying && (!p.target || p.target.state !== 'floor')) {
+                    const avail = treasures.filter(t => t.state === 'floor');
+                    if (avail.length > 0) p.target = avail[Math.floor(Math.random() * avail.length)];
+                }
+                let tx = p.carrying ? basket.x : (p.target ? p.target.x : p.x);
+                let ty = p.carrying ? basket.y : (p.target ? p.target.y : p.y);
+                let dx = tx - p.x, dy = ty - p.y, d = Math.sqrt(dx*dx + dy*dy);
+
+                if (d > 10) {
+                    p.x += (dx/d)*p.speed; p.y += (dy/d)*p.speed;
+                } else {
+                    if (p.carrying) { p.carrying.state = 'hidden'; const t = p.carrying; p.carrying = null; setTimeout(() => { if(gameActive) Object.assign(t, createTreasureData()); }, 6000); }
+                    else if (p.target) { p.target.state = 'held'; p.carrying = p.target; p.target = null; }
+                }
+                p.tick += (0.15 * playerSpeedMult);
+                const jump = Math.abs(Math.sin(p.tick)) * 10;
+                ctx.save();
+                ctx.translate(p.x, p.y - jump);
+                ctx.beginPath(); ctx.arc(0, 0, 42, 0, Math.PI*2); ctx.clip();
+                if(p.photo) ctx.drawImage(p.photo, -42, -42, 84, 84);
+                else { ctx.fillStyle = p.color; ctx.fill(); }
+                ctx.restore();
+                ctx.strokeStyle = "white"; ctx.lineWidth = 4;
+                ctx.beginPath(); ctx.arc(p.x, p.y - jump, 42, 0, Math.PI*2); ctx.stroke();
+                if(p.name) { ctx.fillStyle="#1e3a8a"; ctx.font="bold 22px Gaegu"; ctx.fillText(p.name, p.x, p.y + 70 - jump); }
+                if(p.carrying) { ctx.font = "45px Arial"; ctx.fillText(p.carrying.icon, 0, -45); }
+            });
+
+            if (showText) {
+                ctx.fillStyle = "red"; ctx.font = "bold 80px Gaegu"; ctx.textAlign = "center";
+                if (Math.floor(Date.now() / 250) % 2 === 0) {
+                    ctx.fillText("🚨 초비상! 정리하세요! 🚨", canvas.width / 2, canvas.height / 2 - 100);
+                }
+            }
+            requestAnimationFrame(render);
+        }
+    </script>
+</body>
+</html>

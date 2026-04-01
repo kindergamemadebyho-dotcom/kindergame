@@ -1,0 +1,83 @@
+body {
+  margin: 0;
+  overflow: hidden;
+}
+
+video {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1); /* 거울 효과 */
+}
+
+canvas {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 182, 193, 0.15); /* 연한 벚꽃 느낌 */
+}
+
+#score {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  font-size: 30px;
+  color: white;
+  font-weight: bold;
+}
+
+#startContainer {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+/* 시간 선택 박스 */
+#timeSelect {
+  font-size: 24px;
+  padding: 15px 25px;
+  border-radius: 30px;
+
+  background: rgba(255, 182, 193, 0.8);
+  color: white;
+  font-family: 'Arial Rounded MT Bold', 'Noto Sans KR', sans-serif;
+
+  box-shadow: 0 5px 15px rgba(255, 105, 180, 0.4);
+}
+
+/* 드롭다운 */
+#timeOption {
+  font-size: 20px;
+  margin-left: 10px;
+  border-radius: 10px;
+  padding: 5px;
+}
+
+/* 시작 버튼 */
+#startBtn {
+  font-size: 30px;
+  padding: 20px 60px;
+  border: none;
+  border-radius: 50px;
+
+  background: linear-gradient(135deg, #ffb6c1, #ffc0cb);
+  color: white;
+
+  font-family: 'Arial Rounded MT Bold', 'Noto Sans KR', sans-serif;
+
+  box-shadow: 0 10px 25px rgba(255, 182, 193, 0.6);
+  cursor: pointer;
+
+  transition: all 0.3s ease;
+}
+
+#startBtn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 12px 25px rgba(255, 105, 180, 0.7);
+}
