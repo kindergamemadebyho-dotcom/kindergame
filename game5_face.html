@@ -17,7 +17,6 @@
 
         h1 { color: #ff8787; font-size: 3.5rem; text-shadow: 3px 3px 0px white; margin: 20px 0; }
 
-        /* 1. 업로드 화면 예쁘게 꾸미기 */
         #setup-box {
             background: white;
             padding: 40px;
@@ -43,9 +42,8 @@
             transition: 0.2s;
         }
         .file-label:hover { background-color: #ff6b6b; transform: scale(1.05); }
-        input[type="file"] { display: none; } /* 기본 버튼 숨기기 */
+        input[type="file"] { display: none; }
 
-        /* 게임 화면 스타일 */
         #game-stage { display:none; flex-direction: column; align-items: center; }
 
         #game-container {
@@ -60,10 +58,10 @@
 
         canvas { display: block; }
 
-        .btn-group { margin-top: 30px; display: flex; gap: 20px; }
+        .btn-group { margin-top: 20px; display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
         
         button {
-            font-family: 'Jua', sans-serif; padding: 18px 35px; font-size: 1.6rem;
+            font-family: 'Jua', sans-serif; padding: 15px 25px; font-size: 1.4rem;
             border: none; border-radius: 50px; cursor: pointer; transition: 0.2s;
             box-shadow: 0 6px 0px #ddd; position: relative;
         }
@@ -71,6 +69,8 @@
 
         .btn-yellow { background: #ffd43b; color: #5c4b00; box-shadow: 0 6px 0px #f08c00; }
         .btn-green { background: #69db7c; color: white; box-shadow: 0 6px 0px #2f9e44; }
+        /* 처음으로 버튼 스타일 추가 */
+        .btn-red { background: #ff8787; color: white; box-shadow: 0 6px 0px #e03131; margin-top: 10px; }
         
         .info-text { color: #888; margin-top: 15px; font-size: 1.1rem; }
     </style>
@@ -96,6 +96,7 @@
             <button class="btn-yellow" onclick="revealAll(true)">정답 꾹!</button>
             <button id="next-btn" class="btn-green" onclick="handleNextStep()">다음 사진 ➡️</button>
         </div>
+        <button class="btn-red" onclick="resetGame()">🏠 처음 화면으로</button>
         <p class="info-text">🌸 꽃으로 문질러서 친구를 찾아보세요!</p>
     </div>
 
@@ -117,7 +118,6 @@
         let isCleared = false;
         const ERASER_RADIUS = 35;
 
-        // 파일 선택 시 UI 변경
         uploadInput.addEventListener('change', () => {
             const count = uploadInput.files.length;
             if (count > 0) {
@@ -140,8 +140,22 @@
                 images = data;
                 document.getElementById('setup-box').style.display = 'none';
                 document.getElementById('game-stage').style.display = 'flex';
+                currentIndex = 0; // 시작 시 인덱스 초기화
                 loadLevel(currentIndex);
             });
+        }
+
+        // 처음으로 돌아가는 함수 추가
+        function resetGame() {
+            if (confirm("처음 화면으로 돌아갈까요? 올렸던 사진이 초기화돼요.")) {
+                images = [];
+                currentIndex = 0;
+                uploadInput.value = ""; // 파일 선택 초기화
+                fileCountTxt.innerText = "";
+                startBtn.style.display = 'none';
+                document.getElementById('setup-box').style.display = 'block';
+                document.getElementById('game-stage').style.display = 'none';
+            }
         }
 
         function loadLevel(index) {
@@ -168,13 +182,10 @@
             };
         }
 
-        // 2. 보완: 다음 버튼을 눌렀을 때 바로 넘어가지 않고 완성본을 먼저 보여줌
         function handleNextStep() {
             if (!isCleared) {
-                // 아직 가려져 있다면 정답을 먼저 보여줌
                 revealAll(true);
             } else {
-                // 이미 정답이 보인 상태라면 다음 사진으로
                 nextImage();
             }
         }
@@ -208,7 +219,7 @@
         function checkProgress() {
             const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
             let transparentPixels = 0;
-            for (let i = 3; i < pixels.length; i += 80) { // 성능 최적화
+            for (let i = 3; i < pixels.length; i += 80) {
                 if (pixels[i] === 0) transparentPixels++;
             }
             if ((transparentPixels / (pixels.length / 80)) * 100 > 75) {
@@ -226,7 +237,6 @@
             }
         }
 
-        // 마우스 & 터치 이벤트 동일
         canvas.addEventListener('mousedown', (e) => { isDrawing = true; handleScratch(e.clientX, e.clientY); });
         canvas.addEventListener('mousemove', (e) => { if(isDrawing) handleScratch(e.clientX, e.clientY); });
         window.addEventListener('mouseup', () => isDrawing = false);
