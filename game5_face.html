@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>상상 가득! 우리아이 사진 놀이</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Jua', sans-serif;
+            text-align: center;
+            background: linear-gradient(135deg, #fff5f5 0%, #e7f5ff 100%);
+            margin: 0; padding: 20px; min-height: 100vh;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        h1 { color: #ff8787; font-size: 3.5rem; text-shadow: 3px 3px 0px white; margin: 20px 0; }
+
+        /* 1. 업로드 화면 예쁘게 꾸미기 */
+        #setup-box {
+            background: white;
+            padding: 40px;
+            border-radius: 40px;
+            border: 8px dashed #ffc9c9;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.05);
+            max-width: 500px;
+            width: 90%;
+            transition: 0.3s;
+        }
+
+        .upload-icon { font-size: 5rem; margin-bottom: 10px; display: block; }
+        
+        .file-label {
+            display: inline-block;
+            background-color: #ff8787;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1.5rem;
+            margin: 20px 0;
+            transition: 0.2s;
+        }
+        .file-label:hover { background-color: #ff6b6b; transform: scale(1.05); }
+        input[type="file"] { display: none; } /* 기본 버튼 숨기기 */
+
+        /* 게임 화면 스타일 */
+        #game-stage { display:none; flex-direction: column; align-items: center; }
+
+        #game-container {
+            position: relative;
+            border: 15px solid #fff;
+            border-radius: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            background-color: #fff;
+            cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' style='font-size:30px'><text y='30'>🌸</text></svg>") 15 15, auto;
+            overflow: hidden;
+        }
+
+        canvas { display: block; }
+
+        .btn-group { margin-top: 30px; display: flex; gap: 20px; }
+        
+        button {
+            font-family: 'Jua', sans-serif; padding: 18px 35px; font-size: 1.6rem;
+            border: none; border-radius: 50px; cursor: pointer; transition: 0.2s;
+            box-shadow: 0 6px 0px #ddd; position: relative;
+        }
+        button:active { top: 4px; box-shadow: 0 2px 0px #ddd; }
+
+        .btn-yellow { background: #ffd43b; color: #5c4b00; box-shadow: 0 6px 0px #f08c00; }
+        .btn-green { background: #69db7c; color: white; box-shadow: 0 6px 0px #2f9e44; }
+        
+        .info-text { color: #888; margin-top: 15px; font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+
+    <h1>❓두근두근 누구일까?❓</h1>
+
+    <div id="setup-box">
+        <span class="upload-icon">📸</span>
+        <p style="font-size: 1.8rem; color: #555;">놀이에 사용할<br>우리 아이 사진을 골라주세요!</p>
+        <label for="image-upload" class="file-label">사진 가져오기</label>
+        <input type="file" id="image-upload" accept="image/*" multiple>
+        <p id="file-count" style="color: #ff8787;"></p>
+        <button class="btn-yellow" id="start-btn" onclick="startGame()" style="display:none; width: 100%;">🌸 게임 시작하기! 🌸</button>
+    </div>
+
+    <div id="game-stage">
+        <div id="game-container">
+            <canvas id="canvas"></canvas>
+        </div>
+        <div class="btn-group">
+            <button class="btn-yellow" onclick="revealAll(true)">정답 꾹!</button>
+            <button id="next-btn" class="btn-green" onclick="handleNextStep()">다음 사진 ➡️</button>
+        </div>
+        <p class="info-text">🌸 꽃으로 문질러서 친구를 찾아보세요!</p>
+    </div>
+
+    <audio id="snd-scratch" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"></audio>
+    <audio id="snd-success" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"></audio>
+
+    <script>
+        const uploadInput = document.getElementById('image-upload');
+        const fileCountTxt = document.getElementById('file-count');
+        const startBtn = document.getElementById('start-btn');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const sndScratch = document.getElementById('snd-scratch');
+        const sndSuccess = document.getElementById('snd-success');
+
+        let images = [];
+        let currentIndex = 0;
+        let isDrawing = false;
+        let isCleared = false;
+        const ERASER_RADIUS = 35;
+
+        // 파일 선택 시 UI 변경
+        uploadInput.addEventListener('change', () => {
+            const count = uploadInput.files.length;
+            if (count > 0) {
+                fileCountTxt.innerText = `총 ${count}장의 사진이 준비되었어요!`;
+                startBtn.style.display = 'block';
+            }
+        });
+
+        function startGame() {
+            const files = uploadInput.files;
+            const readers = Array.from(files).map(file => {
+                return new Promise(res => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => res(e.target.result);
+                    reader.readAsDataURL(file);
+                });
+            });
+
+            Promise.all(readers).then(data => {
+                images = data;
+                document.getElementById('setup-box').style.display = 'none';
+                document.getElementById('game-stage').style.display = 'flex';
+                loadLevel(currentIndex);
+            });
+        }
+
+        function loadLevel(index) {
+            isCleared = false;
+            const img = new Image();
+            img.src = images[index];
+            img.onload = function() {
+                const maxWidth = Math.min(600, window.innerWidth * 0.85);
+                const scale = maxWidth / img.width;
+                canvas.width = maxWidth;
+                canvas.height = img.height * scale;
+
+                canvas.style.backgroundImage = `url(${img.src})`;
+                canvas.style.backgroundSize = "cover";
+
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.fillStyle = '#ffdde1'; 
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = "#ff8a80";
+                ctx.font = "30px 'Jua'";
+                ctx.textAlign = "center";
+                ctx.fillText("누가 숨었을까? 🌸", canvas.width/2, canvas.height/2);
+            };
+        }
+
+        // 2. 보완: 다음 버튼을 눌렀을 때 바로 넘어가지 않고 완성본을 먼저 보여줌
+        function handleNextStep() {
+            if (!isCleared) {
+                // 아직 가려져 있다면 정답을 먼저 보여줌
+                revealAll(true);
+            } else {
+                // 이미 정답이 보인 상태라면 다음 사진으로
+                nextImage();
+            }
+        }
+
+        function nextImage() {
+            currentIndex++;
+            if (currentIndex < images.length) {
+                loadLevel(currentIndex);
+            } else {
+                alert("우와! 모든 사진을 다 찾았어요! 한 번 더 놀아볼까요?");
+                currentIndex = 0;
+                loadLevel(currentIndex);
+            }
+        }
+
+        function handleScratch(clientX, clientY) {
+            if (isCleared) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = (clientX - rect.left) * (canvas.width / rect.width);
+            const y = (clientY - rect.top) * (canvas.height / rect.height);
+
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath();
+            ctx.arc(x, y, ERASER_RADIUS, 0, Math.PI * 2);
+            ctx.fill();
+
+            if (sndScratch.paused) sndScratch.play().catch(()=>{});
+            checkProgress();
+        }
+
+        function checkProgress() {
+            const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            let transparentPixels = 0;
+            for (let i = 3; i < pixels.length; i += 80) { // 성능 최적화
+                if (pixels[i] === 0) transparentPixels++;
+            }
+            if ((transparentPixels / (pixels.length / 80)) * 100 > 75) {
+                revealAll(true);
+            }
+        }
+
+        function revealAll(withEffect) {
+            if (isCleared) return;
+            isCleared = true;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (withEffect) {
+                sndSuccess.play().catch(()=>{});
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            }
+        }
+
+        // 마우스 & 터치 이벤트 동일
+        canvas.addEventListener('mousedown', (e) => { isDrawing = true; handleScratch(e.clientX, e.clientY); });
+        canvas.addEventListener('mousemove', (e) => { if(isDrawing) handleScratch(e.clientX, e.clientY); });
+        window.addEventListener('mouseup', () => isDrawing = false);
+        canvas.addEventListener('touchstart', (e) => { isDrawing = true; handleScratch(e.touches[0].clientX, e.touches[0].clientY); }, {passive: false});
+        canvas.addEventListener('touchmove', (e) => { if(isDrawing) { handleScratch(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); } }, {passive: false});
+        window.addEventListener('touchend', () => isDrawing = false);
+
+    </script>
+</body>
+</html>

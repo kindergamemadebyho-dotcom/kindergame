@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎨 우리 반 얼굴 믹스 퀴즈 🎨</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dongle:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-bg: #f0f9ff;
+            --main-border: #ffcc80;
+            --btn-blue: #81d4fa;
+            --btn-green: #a5d6a7;
+        }
+
+        body { 
+            font-family: 'Dongle', sans-serif; 
+            background-color: var(--primary-bg); 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+        
+        #app { 
+            width: 700px; 
+            background: white; 
+            border-radius: 40px; 
+            padding: 40px; 
+            box-shadow: 0 15px 45px rgba(0,0,0,0.1); 
+            border: 10px solid var(--main-border);
+            transition: width 0.5s ease-in-out; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-sizing: border-box; /* 패딩이 박스 크기에 영향을 주지 않도록 설정 */
+        }
+
+        /* 정답 확인 시 와이드 모드 */
+        #app.wide { width: 95vw; max-width: 1300px; }
+
+        .screen { display: none; width: 100%; text-align: center; }
+        .active { display: block; }
+
+        /* [단계 1] 업로드 화면 - 깨짐 방지 핵심 */
+        .upload-container { width: 100%; display: flex; flex-direction: column; align-items: center; }
+        .upload-zone { 
+            width: 100%;
+            height: 250px; /* 높이 고정으로 깨짐 방지 */
+            border: 6px dashed #b2dfdb; 
+            border-radius: 30px; 
+            cursor: pointer; 
+            background-color: #e0f2f1;
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box; /* 내부 선이 밖으로 나가지 않게 함 */
+        }
+
+        /* [단계 2] 게임 화면 */
+        .game-layout {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 25px;
+            width: 100%;
+        }
+
+        .wide .game-layout { flex-direction: row; justify-content: center; align-items: flex-start; }
+
+        /* 문제 사진 구역 */
+        .quiz-box { flex: 0 0 auto; text-align: center; }
+        .canvas-container { 
+            width: 450px; 
+            height: 450px;
+            background: #fff; 
+            border-radius: 30px; 
+            border: 8px solid #f8fafc; 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: all 0.4s ease;
+        }
+        .wide .canvas-container { width: 550px; height: 550px; border-color: var(--btn-blue); }
+        canvas { width: 100%; height: 100%; display: block; }
+
+        /* 정답 리스트 구역 */
+        .answer-side {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: fadeIn 0.5s ease;
+        }
+
+        /* 정답 사진들을 더 크게! */
+        .answer-grid { 
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            background: #fffef0;
+            padding: 30px;
+            border-radius: 35px;
+            border: 5px dashed #ffcc80;
+            max-height: 500px;
+            overflow-y: auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .answer-grid img { 
+            width: 180px; /* 사진 크기 대폭 상향 */
+            height: 180px; 
+            object-fit: cover; 
+            border-radius: 25px; 
+            border: 5px solid white; 
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15); 
+        }
+
+        /* 버튼 및 텍스트 */
+        .btn { 
+            padding: 15px 30px; 
+            border: none; 
+            border-radius: 20px; 
+            font-size: 36px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-family: 'Dongle';
+            box-shadow: 0 5px 0 rgba(0,0,0,0.1);
+            transition: 0.2s;
+        }
+        .btn-blue { background: var(--btn-blue); color: white; width: 450px; margin-top: 20px; }
+        .btn-green { background: var(--btn-green); color: white; width: 100%; margin-top: 20px; }
+        .btn-home { background: #cfd8dc; color: #555; font-size: 24px; border: none; border-radius: 10px; padding: 5px 20px; margin-top: 15px; cursor: pointer; font-family: 'Dongle'; }
+
+        .answer-title { font-size: 48px; color: #ff8a65; margin: 0 0 15px 0; }
+        .hidden { display: none !important; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div id="step-upload" class="screen active">
+        <h2 style="font-size: 55px; color:#ff8a65; margin:0;">🌈 우리 반 얼굴 믹스 🌈</h2>
+        <div class="upload-container">
+            <div style="background: #fff9c4; padding: 10px 30px; border-radius: 15px; margin-top:10px; border: 2px solid #fff176;">
+                <span style="font-size: 28px;">얼굴 투명도: </span>
+                <input type="number" id="opacity-input" value="40" min="10" max="100" style="width:60px; font-size:24px; font-family:'Dongle'; border-radius:8px; border:1px solid #ddd; text-align:center;">
+                <span style="font-size: 28px;">%</span>
+            </div>
+            <label class="upload-zone">
+                <span style="font-size: 100px;">📸</span>
+                <p style="font-size: 34px; margin: 5px 0; color:#4db6ac;">여기를 눌러 사진을 골라주세요!</p>
+                <p style="font-size: 22px; color:#94a3b8;">(3장 이상 선택해야 재미있어요! 😊)</p>
+                <input type="file" id="file-input" multiple accept="image/*" style="display:none;">
+            </label>
+        </div>
+    </div>
+
+    <div id="step-game" class="screen">
+        <div class="game-layout">
+            <div class="quiz-box">
+                <h3 id="game-status" style="font-size: 40px; color:#4db6ac; margin:0 0 10px 0;">누가 숨어있을까?</h3>
+                <div class="canvas-container">
+                    <canvas id="quiz-canvas" width="600" height="600"></canvas>
+                </div>
+                <button id="btn-reveal" class="btn btn-blue">🧐 정답 확인하기</button>
+                <br>
+                <button id="btn-home" class="btn-home">🏠 사진 다시 고르기</button>
+            </div>
+
+            <div id="answer-side" class="answer-side hidden">
+                <p class="answer-title">🎉 찾았다! 이 친구들이에요! 🎉</p>
+                <div class="answer-grid" id="answer-grid"></div>
+                <button id="btn-next" class="btn btn-green">➡️ 다음 문제로!</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const fileInput = document.getElementById('file-input');
+    const opacityInput = document.getElementById('opacity-input');
+    const screenUpload = document.getElementById('step-upload');
+    const screenGame = document.getElementById('step-game');
+    const app = document.getElementById('app');
+    const canvas = document.getElementById('quiz-canvas');
+    const ctx = canvas.getContext('2d');
+    const btnReveal = document.getElementById('btn-reveal');
+    const btnNext = document.getElementById('btn-next');
+    const btnHome = document.getElementById('btn-home');
+    const answerSide = document.getElementById('answer-side');
+    const answerGrid = document.getElementById('answer-grid');
+    const gameStatus = document.getElementById('game-status');
+
+    let allImages = [];
+    let currentQuizSet = [];
+
+    fileInput.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length < 3) return alert("친구들 사진을 3장 이상 선택해 주세요!");
+        
+        allImages = await Promise.all(files.map(file => {
+            return new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }));
+        
+        screenUpload.classList.remove('active');
+        screenGame.classList.add('active');
+        makeNewQuiz();
+    });
+
+function makeNewQuiz() {
+    answerSide.classList.add('hidden');
+    btnReveal.classList.remove('hidden');
+    app.classList.remove('wide');
+    gameStatus.innerText = "누가 숨어있을까?";
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    const userOpacity = parseInt(opacityInput.value) / 100;
+    let count = Math.min(Math.floor(Math.random() * 2) + 3, allImages.length);
+    let shuffled = [...allImages].sort(() => Math.random() - 0.5);
+    currentQuizSet = shuffled.slice(0, count);
+
+    // 핵심 수정 부분: 모든 사진이 동일한 투명도를 갖도록 계산
+    currentQuizSet.forEach((img, i) => {
+        ctx.save();
+        
+        // n번째 사진이 그려질 때, 그 이전까지 그려진 바탕과 
+        // 1:n의 비율로 섞이게 하는 마법의 수식입니다.
+        // 예: 2번째 사진은 1/2(50%), 3번째는 1/3(33%)...
+        const fairOpacity = 1 / (i + 1); 
+        
+        // 여기에 사용자가 설정한 '섞기 강도'를 곱해 조절합니다.
+        ctx.globalAlpha = fairOpacity * userOpacity; 
+        
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        ctx.restore();
+    });
+}
+
+    btnReveal.addEventListener('click', () => {
+        app.classList.add('wide'); 
+        answerSide.classList.remove('hidden'); 
+        btnReveal.classList.add('hidden'); 
+        gameStatus.innerText = "와! 찾았다!";
+
+        answerGrid.innerHTML = '';
+        currentQuizSet.forEach(img => {
+            const thumb = document.createElement('img');
+            thumb.src = img.src;
+            answerGrid.appendChild(thumb);
+        });
+    });
+
+    btnNext.addEventListener('click', makeNewQuiz);
+    btnHome.addEventListener('click', () => {
+        if(confirm("사진을 처음부터 다시 고를까요?")) location.reload();
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>우리아이 봄나들이 퍼즐</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --primary-pink: #ff9a9e;
+            --secondary-pink: #fecfef;
+            --mint-light: #e0f9f5;
+            --highlight: #00f2ff;
+            --text-color: #6d5c5c;
+        }
+
+        body {
+            font-family: 'Nanum Gothic', sans-serif;
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: var(--text-color);
+        }
+
+        /* 헤더 디자인 */
+        #main-header { text-align: center; padding: 30px; }
+        h1 { color: #d85a7f; text-shadow: 2px 2px white; margin: 0; font-size: 2.5rem; }
+        p { color: #888; font-size: 1.1rem; }
+
+        /* 설정 카드 (봄 느낌) */
+        .setup-container {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 40px;
+            border-radius: 30px;
+            box-shadow: 0 15px 35px rgba(216, 90, 127, 0.2);
+            text-align: center;
+            width: 90%;
+            max-width: 450px;
+            border: 5px solid white;
+        }
+
+        .btn {
+            background: var(--primary-pink);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 20px;
+            box-shadow: 0 5px 15px rgba(255, 154, 158, 0.4);
+        }
+        .btn:hover { transform: scale(1.05); background: #f87d81; }
+
+        select, input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            margin: 15px 0;
+            border: 2px solid var(--secondary-pink);
+            border-radius: 15px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        /* 게임 영역 */
+        #game-area { display: none; text-align: center; width: 100%; max-width: 600px; padding-bottom: 50px; }
+
+        #status-display {
+            display: flex;
+            justify-content: space-around;
+            background: white;
+            padding: 15px;
+            border-radius: 50px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        /* 퍼즐 판 */
+        #puzzle-board {
+            position: relative;
+            background: rgba(255,255,255,0.5);
+            border: 10px solid white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            margin: 0 auto;
+            overflow: hidden;
+        }
+
+        .puzzle-piece {
+            position: absolute;
+            background-repeat: no-repeat;
+            cursor: pointer;
+            box-sizing: border-box;
+            border: 1px solid rgba(255,255,255,0.3);
+            /* 보완 1: PPT 슬라이딩 효과 (Smooth Swap) */
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 8px;
+        }
+
+        /* 보완 3: 선택 시 네온 효과 */
+        .puzzle-piece.selected {
+            z-index: 100;
+            border: 4px solid var(--highlight);
+            box-shadow: 0 0 20px var(--highlight);
+            transform: scale(1.05);
+        }
+
+        /* 힌트 시스템 */
+        #hint-box {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+            text-align: right;
+        }
+
+        #hint-img {
+            width: 150px;
+            height: 150px;
+            border: 6px solid white;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            background-size: cover;
+            background-position: center;
+        }
+
+        .hint-hidden { transform: scale(0) rotate(-45deg); opacity: 0; pointer-events: none; }
+
+        .hint-btn {
+            background: white;
+            border: 2px solid var(--primary-pink);
+            color: var(--primary-pink);
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        /* 랭킹 화면 */
+        #ranking-modal {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 40px;
+            border-radius: 30px;
+            box-shadow: 0 0 100px rgba(0,0,0,0.5);
+            z-index: 2000;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div id="main-header">
+    <h1>🌸 사진 퍼즐 놀이</h1>
+    <p>예쁜 사진을 넣어서 퍼즐을 맞춰보세요!</p>
+</div>
+
+<div class="setup-container" id="setup-screen">
+    <div style="font-size: 50px; margin-bottom: 10px;">🎨</div>
+    <h3>퍼즐 사진을 선택해주세요</h3>
+    <input type="file" id="imageInput" accept="image/*">
+    
+    <h3>조각 수 선택 (난이도)</h3>
+    <select id="pieceCount">
+        <option value="4">아주 쉬움 (4조각)</option>
+        <option value="8">쉬움 (8조각)</option>
+        <option value="16" selected>보통 (16조각)</option>
+        <option value="32">조금 어려움 (32조각)</option>
+        <option value="64">어려움 (64조각)</option>
+        <option value="128">도전! (128조각)</option>
+    </select>
+    <br>
+    <button class="btn" onclick="startGame()">퍼즐 만들기 시작!</button>
+</div>
+
+<div id="game-area">
+    <div id="status-display">
+        <div id="timer">시간: 00:00</div>
+        <div id="move-count">이동: 0번</div>
+    </div>
+    
+    <div id="puzzle-board"></div>
+    
+    <button class="btn" style="background:#888; margin-top: 30px;" onclick="location.reload()">다시 만들기</button>
+
+    <div id="hint-box">
+        <div id="hint-img" onclick="toggleHint()" class="hint-hidden"></div>
+        <button class="hint-btn" onclick="toggleHint()">완성본 보기/숨기기</button>
+    </div>
+</div>
+
+<div id="ranking-modal">
+    <h1 style="font-size: 3rem;">🎉 대성공! 🎉</h1>
+    <p id="final-stats" style="font-size: 1.5rem; margin: 20px 0;"></p>
+    <div id="best-record" style="color: #ff6b6b; font-weight: bold; margin-bottom: 20px;"></div>
+    <button class="btn" onclick="location.reload()">최고 기록 도전하기</button>
+</div>
+
+<script>
+    let imgUrl = "";
+    let gridSizeX, gridSizeY;
+    let pieceWidth, pieceHeight;
+    let pieces = [];
+    let firstPiece = null;
+    let startTime;
+    let timerInterval;
+    let moveCount = 0;
+
+    const imageInput = document.getElementById('imageInput');
+    const board = document.getElementById('puzzle-board');
+    const hintImg = document.getElementById('hint-img');
+
+    imageInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                imgUrl = ev.target.result;
+                hintImg.style.backgroundImage = `url(${imgUrl})`;
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    function toggleHint() {
+        hintImg.classList.toggle('hint-hidden');
+    }
+
+    function startGame() {
+        if (!imgUrl) return alert("아이 사진을 골라주세요!");
+
+        const count = parseInt(document.getElementById('pieceCount').value);
+        setupDifficulty(count);
+
+        const maxWidth = Math.min(window.innerWidth * 0.9, 500);
+        pieceWidth = maxWidth / gridSizeX;
+        pieceHeight = pieceWidth; // 정사각형 기준
+
+        board.style.width = `${pieceWidth * gridSizeX}px`;
+        board.style.height = `${pieceHeight * gridSizeY}px`;
+
+        // 데이터 초기화
+        moveCount = 0;
+        document.getElementById('move-count').innerText = `이동: 0번`;
+        pieces = [...Array(gridSizeX * gridSizeY).keys()].sort(() => Math.random() - 0.5);
+
+        renderBoard();
+        document.getElementById('setup-screen').style.display = 'none';
+        document.getElementById('game-area').style.display = 'block';
+        
+        startTimer();
+    }
+
+    function setupDifficulty(count) {
+        if (count === 4) { gridSizeX = 2; gridSizeY = 2; }
+        else if (count === 8) { gridSizeX = 4; gridSizeY = 2; }
+        else if (count === 16) { gridSizeX = 4; gridSizeY = 4; }
+        else if (count === 32) { gridSizeX = 8; gridSizeY = 4; }
+        else if (count === 64) { gridSizeX = 8; gridSizeY = 8; }
+        else { gridSizeX = 16; gridSizeY = 8; }
+    }
+
+    function renderBoard() {
+        board.innerHTML = "";
+        pieces.forEach((originIdx, currentPosIdx) => {
+            const row = Math.floor(currentPosIdx / gridSizeX);
+            const col = currentPosIdx % gridSizeX;
+
+            const div = document.createElement('div');
+            div.className = 'puzzle-piece';
+            div.style.width = `${pieceWidth}px`;
+            div.style.height = `${pieceHeight}px`;
+            
+            // 보완 1: 슬라이딩 위치값 설정
+            div.style.left = `${col * pieceWidth}px`;
+            div.style.top = `${row * pieceHeight}px`;
+
+            div.style.backgroundImage = `url(${imgUrl})`;
+            div.style.backgroundSize = `${pieceWidth * gridSizeX}px ${pieceHeight * gridSizeY}px`;
+            
+            const originRow = Math.floor(originIdx / gridSizeX);
+            const originCol = originIdx % gridSizeX;
+            div.style.backgroundPosition = `-${originCol * pieceWidth}px -${originRow * pieceHeight}px`;
+
+            div.dataset.currentIdx = currentPosIdx;
+            div.onclick = () => handleSelect(div);
+
+            board.appendChild(div);
+        });
+    }
+
+    function handleSelect(el) {
+        // 보완 4: 같은 조각 다시 누르면 취소
+        if (firstPiece === el) {
+            el.classList.remove('selected');
+            firstPiece = null;
+            return;
+        }
+
+        if (!firstPiece) {
+            firstPiece = el;
+            el.classList.add('selected'); // 보완 3: 불빛 효과
+        } else {
+            // 두 조각 교체 (슬라이딩 효과 발생)
+            const idx1 = parseInt(firstPiece.dataset.currentIdx);
+            const idx2 = parseInt(el.dataset.currentIdx);
+
+            [pieces[idx1], pieces[idx2]] = [pieces[idx2], pieces[idx1]];
+            
+            moveCount++;
+            document.getElementById('move-count').innerText = `이동: ${moveCount}번`;
+
+            firstPiece.classList.remove('selected');
+            renderBoard();
+            firstPiece = null;
+            
+            setTimeout(checkWin, 600);
+        }
+    }
+
+    function checkWin() {
+        if (pieces.every((val, idx) => val === idx)) {
+            clearInterval(timerInterval);
+            const finalTime = document.getElementById('timer').innerText;
+            
+            confetti({ particleCount: 200, spread: 90, origin: { y: 0.6 } });
+
+            document.getElementById('final-stats').innerText = `${finalTime} 만에 성공! (${moveCount}번 이동)`;
+            document.getElementById('ranking-modal').style.display = 'block';
+            
+            // 단순 로컬 랭킹 저장
+            const best = localStorage.getItem('best_puzzle_' + pieces.length);
+            if (!best || moveCount < parseInt(최고)) {
+                localStorage.setItem('best_puzzle_' + pieces.length, moveCount);
+                document.getElementById('best-record').innerText = "✨ 새로운 개인 최고 기록입니다! ✨";
+            } else {
+                document.getElementById('best-record').innerText = `최고 이동 기록: ${best}번`;
+            }
+        }
+    }
+
+    function startTimer() {
+        let seconds = 0;
+        startTime = Date.now();
+        timerInterval = setInterval(() => {
+            seconds++;
+            const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+            const s = String(seconds % 60).padStart(2, '0');
+            document.getElementById('timer').innerText = `시간: ${m}:${s}`;
+        }, 1000);
+    }
+</script>
+
+</body>
+</html>
