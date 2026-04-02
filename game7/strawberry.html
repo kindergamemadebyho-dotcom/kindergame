@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>새콤달콤 딸기 농장 게임</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+</head>
+<body>
+
+<audio id="eatSound" src="pop.mp3" preload="auto"></audio>
+
+<video id="input_video" autoplay playsinline></video>
+<canvas id="canvas"></canvas>
+
+<div id="startContainer">
+  <div id="timeSelect">
+    ⏰ 수확 시간
+    <select id="timeOption">
+      <option value="60">1분</option>
+      <option value="120">2분</option>
+      <option value="180">3분</option>
+    </select>
+  </div>
+  <button id="startBtn">🍓 딸기 먹기 시작! 🍓</button>
+</div>
+
+<div id="score">🍓 딸기 점수: 0</div>
+
+<script src="game.js"></script>
+</body>
+</html>
