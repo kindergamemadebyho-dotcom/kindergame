@@ -21,10 +21,9 @@ let petalInterval;
 let timer;
 let gameTime = 60;
 
-// 전역 변수로 설정 (양손 상태 저장)
 let handStates = [
-  { isClosed: false, x: -100, y: -100, points: [], isLeft: true }, // 왼손
-  { isClosed: false, x: -100, y: -100, points: [], isLeft: false }  // 오른손
+  { isClosed: false, x: -500, y: -500, points: [], isLeft: true },
+  { isClosed: false, x: -500, y: -500, points: [], isLeft: false }
 ];
 
 // ================= 🌸 꽃잎 이미지 로드 =================
@@ -38,7 +37,6 @@ for (let i = 1; i <= maxFlowerTypes; i++) {
   img.onerror = () => {};
 }
 
-// ================= 🌸 꽃잎 생성 함수 =================
 function createPetal() {
   if (petalImages.length === 0) return;
   const img = petalImages[Math.floor(Math.random() * petalImages.length)];
@@ -56,10 +54,10 @@ startBtn.addEventListener("click", () => {
   if (bgm) bgm.play();
   gameStarted = true;
   score = 0;
-  scoreText.innerText = `점수: 0 | 남은시간: ${timeOption.value}`;
+  gameTime = parseInt(timeOption.value);
+  scoreText.innerText = `점수: 0 | 남은시간: ${gameTime}`;
   startBtn.style.display = "none";
   timeSelect.style.display = "none";
-  gameTime = parseInt(timeOption.value);
 
   clearInterval(petalInterval);
   petalInterval = setInterval(createPetal, 200);
@@ -120,11 +118,7 @@ function update() {
         hand.points.forEach(p => {
           ctx.fillStyle = "rgba(255, 192, 203, 0.6)";
           ctx.beginPath();
-          ctx.arc(p.x, p.y, 18, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = "rgba(255, 105, 180, 0.8)";
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+          ctx.arc(p.x, p.y, 10, 0, Math.PI * 2);
           ctx.fill();
         });
       }
@@ -144,7 +138,7 @@ function update() {
           const petalCenterX = p.x + p.size / 2;
           const petalCenterY = p.y + p.size / 2;
           const dist = Math.sqrt(Math.pow(hand.x - petalCenterX, 2) + Math.pow(hand.y - petalCenterY, 2));
-          if (dist < 80) caught = true;
+          if (dist < 100) caught = true;
         }
       });
 
@@ -161,21 +155,19 @@ function update() {
   requestAnimationFrame(update);
 }
 
-// ================= 🖐️ 손 인식 설정 (성능 최적화 버전) =================
+// ================= 🖐️ 손 인식 설정 (밸런스 조정) =================
 const handsMesh = new Hands({
   locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
 });
 
 handsMesh.setOptions({
   maxNumHands: 2,
-  modelComplexity: 0, // [수정] 렉 줄이기를 위해 0으로 하향하되 신뢰도를 높임
-  minDetectionConfidence: 0.6, 
-  minTrackingConfidence: 0.6
+  modelComplexity: 1,
+  minDetectionConfidence: 0.5, 
+  minTrackingConfidence: 0.5 
 });
 
 handsMesh.onResults(results => {
-  // 손이 감지되지 않았을 때 갑자기 점이 사라져서 생기는 끊김 방지
-  // 완전히 초기화하기보다 "인식 안 됨" 상태만 업데이트
   let detectedIndices = new Set();
 
   if (results.multiHandLandmarks && results.multiHandedness) {
@@ -184,13 +176,22 @@ handsMesh.onResults(results => {
       const handIndex = isLeft ? 0 : 1; 
       detectedIndices.add(handIndex);
 
-      const fingerPairs = [
-        { tip: 4, pip: 2 }, { tip: 8, pip: 6 }, { tip: 12, pip: 10 }, { tip: 16, pip: 14 }, { tip: 20, pip: 18 }
-      ];
+      // 1. 손 크기 측정 (손목 0번 ~ 중지뿌리 9번 거리)
+      const palmSize = Math.sqrt(
+        Math.pow(landmarks[9].x - landmarks[0].x, 2) + 
+        Math.pow(landmarks[9].y - landmarks[0].y, 2)
+      );
 
-      let points = fingerPairs.map(pair => ({
-        x: (1 - landmarks[pair.tip].x) * canvas.width,
-        y: landmarks[pair.tip].y * canvas.height
+      // [수정] 너무 관대한 기준을 조금 더 엄격하게 (0.9 -> 0.55)
+      const dynamicThreshold = palmSize * 0.55; 
+
+      // 검지(8), 중지(12), 약지(16), 소지(20) 끝마디
+      const fingerTips = [8, 12, 16, 20];
+      const fingerPips = [6, 10, 14, 18];
+
+      let points = fingerTips.map(tipIdx => ({
+        x: (1 - landmarks[tipIdx].x) * canvas.width,
+        y: landmarks[tipIdx].y * canvas.height
       }));
 
       const palmCenter = {
@@ -199,18 +200,25 @@ handsMesh.onResults(results => {
       };
 
       let closedCount = 0;
-      fingerPairs.forEach(pair => {
-        const tip = landmarks[pair.tip];
-        const pip = landmarks[pair.pip];
-        const distToPip = Math.sqrt(Math.pow(tip.x - pip.x, 2) + Math.pow(tip.y - pip.y, 2));
-        const distToPalm = Math.sqrt(Math.pow(tip.x - landmarks[9].x, 2) + Math.pow(tip.y - landmarks[9].y, 2));
+      fingerTips.forEach((tipIdx, i) => {
+        const tip = landmarks[tipIdx];
+        const pip = landmarks[fingerPips[i]]; // 중간 마디
 
-        if (distToPip < 0.08 || distToPalm < 0.15) { // 판정 범위를 조금 더 넓혀 측면 대응
+        // 손바닥 중심(9번)과의 거리
+        const distToPalm = Math.sqrt(
+          Math.pow(tip.x - landmarks[9].x, 2) + 
+          Math.pow(tip.y - landmarks[9].y, 2)
+        );
+
+        // [수정] 수직 판정을 단순히 y값 비교가 아닌, 마디 거리 기반으로 보완
+        // 손가락 끝이 중간 마디보다 손바닥 중심에 더 가까워야 '접힘'으로 인정
+        if (distToPalm < dynamicThreshold) {
           closedCount++;
         }
       });
 
       handStates[handIndex] = {
+        // [수정] 4개 손가락 중 3개 이상 확실히 접혔을 때만 주먹으로 인정
         isClosed: closedCount >= 3,
         x: palmCenter.x,
         y: palmCenter.y,
@@ -220,24 +228,22 @@ handsMesh.onResults(results => {
     });
   }
 
-  // 화면에 없는 손은 부드럽게 화면 밖으로 치우기 (끊김 방지)
   [0, 1].forEach(i => {
     if (!detectedIndices.has(i)) {
       handStates[i].points = [];
       handStates[i].isClosed = false;
-      handStates[i].x = -500; // 멀리 이동시켜 꽃잎 움직임에 영향 주지 않음
+      handStates[i].x = -500;
       handStates[i].y = -500;
     }
   });
 });
 
-// [수정] 카메라 해상도를 낮추어 CPU 부담을 줄임 (렉 개선의 핵심)
 const camera = new Camera(video, {
   onFrame: async () => { 
     await handsMesh.send({ image: video }); 
   },
-  width: 480, // 640에서 480으로 하향
-  height: 360 // 480에서 360으로 하향
+  width: 640,
+  height: 480
 });
 
 camera.start();
