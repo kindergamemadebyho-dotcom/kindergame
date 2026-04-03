@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>사진 전용 우리 반 룰렛</title>
+    <style>
+        :root { --primary: #ff9ff3; --secondary: #feca57; --bg: #f0f9ff; }
+        body { font-family: 'Nanum Gothic', sans-serif; background-color: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        .page { display: none; width: 90%; max-width: 700px; background: white; padding: 30px; border-radius: 30px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); border: 6px solid var(--primary); text-align: center; }
+        .active { display: block; }
+        h1 { color: #ff6b6b; margin-bottom: 20px; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        textarea, input[type="file"] { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 10px; box-sizing: border-box; }
+        
+        .btn-main { background: var(--secondary); color: white; border: none; padding: 15px 40px; font-size: 1.3rem; border-radius: 50px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 0 #ee9d00; margin: 5px; }
+        .btn-main:active { transform: translateY(2px); box-shadow: 0 2px 0 #ee9d00; }
+        .btn-sub { background: #a29bfe; box-shadow: 0 4px 0 #6c5ce7; font-size: 1rem; padding: 10px 25px; }
+        
+        #canvas-container { position: relative; width: 400px; height: 400px; margin: 20px auto; }
+        #pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid #ff4757; z-index: 10; }
+        canvas { border-radius: 50%; border: 8px solid var(--secondary); background: white; width: 100%; height: 100%; }
+        
+        #result-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; flex-direction: column; justify-content: center; align-items: center; }
+        #result-box { background: white; padding: 40px; border-radius: 30px; text-align: center; border: 8px solid var(--primary); width: 85%; max-width: 500px; }
+        #winner-img { width: 300px; height: 300px; object-fit: cover; border-radius: 20px; margin-bottom: 10px; display: none; border: 5px solid #eee; }
+        #winner-name { font-size: 4.5rem; color: #333; margin: 10px 0; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div id="setup-page" class="page active">
+        <h1>🎡 우리 반 룰렛 설정</h1>
+        <div class="input-group">
+            <label>👦 이름 (이름옆에 ,를 적어 분류하세요!, 이름만 적어도 됩니다.)</label>
+            <textarea id="names-input" rows="3" placeholder="이름을 적어 주세요."></textarea>
+        </div>
+        <div class="input-group">
+            <label>📸 사진 선택 (여러 장, 사진만 넣으셔도 됩니다.)</label>
+            <input type="file" id="image-input" accept="image/*" multiple>
+        </div>
+        <button class="btn-main" onclick="initGame()">룰렛 만들기</button>
+    </div>
+
+    <div id="game-page" class="page">
+        <h1 id="game-title">누가 뽑힐까요?</h1>
+        <div id="canvas-container">
+            <div id="pointer"></div>
+            <canvas id="canvas" width="500" height="500"></canvas>
+        </div>
+        <button id="spin-btn" class="btn-main" onclick="spin()">룰렛 돌리기!</button>
+        <div style="margin-top: 15px;">
+            <button class="btn-main btn-sub" onclick="goBackToSetup()">⚙️ 설정 변경하기</button>
+        </div>
+    </div>
+
+    <div id="result-modal">
+        <div id="result-box">
+            <img id="winner-img" src="">
+            <div id="winner-name"></div>
+            <p id="congrats-text" style="font-size: 1.5rem; color: #888;">당첨을 축하해요! 🎉</p>
+            <button class="btn-main" style="background:#444; box-shadow:0 4px 0 #222; margin-top:20px;" onclick="closeResult()">확인 (명단 제외)</button>
+        </div>
+    </div>
+
+<script>
+    let participants = [];
+    let winnerIdx = null;
+    let isSpinning = false;
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playTickSound() {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.5, audioCtx.currentTime); 
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.04);
+    }
+
+    function playWinSound() {
+        const notes = [523.25, 659.25, 783.99, 1046.50]; 
+        notes.forEach((freq, i) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime + (i * 0.1));
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime + (i * 0.1));
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + (i * 0.1) + 0.4);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(audioCtx.currentTime + (i * 0.1));
+            osc.stop(audioCtx.currentTime + (i * 0.1) + 0.4);
+        });
+    }
+
+    async function initGame() {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const names = document.getElementById('names-input').value.split(',').map(n => n.trim()).filter(n => n !== "");
+        const files = Array.from(document.getElementById('image-input').files);
+        
+        let count = Math.max(names.length, files.length);
+        if (count === 0) count = 8;
+
+        participants = [];
+        for (let i = 0; i < count; i++) {
+            let img = null;
+            if (files[i]) {
+                img = await new Promise(res => {
+                    const r = new FileReader();
+                    r.onload = e => { const m = new Image(); m.onload = () => res(m); m.src = e.target.result; };
+                    r.readAsDataURL(files[i]);
+                });
+            }
+            // 이름이 없으면 공백("")으로 설정 (자동 번호 생성 제거)
+            participants.push({ 
+                name: names[i] || "", 
+                img: img, 
+                color: `hsl(${(360/count)*i}, 70%, 80%)` 
+            });
+        }
+        document.getElementById('setup-page').classList.remove('active');
+        document.getElementById('game-page').classList.add('active');
+        draw(0);
+    }
+
+    function goBackToSetup() {
+        if (isSpinning) return;
+        document.getElementById('game-page').classList.remove('active');
+        document.getElementById('setup-page').classList.add('active');
+    }
+
+    function draw(angle) {
+        const num = participants.length;
+        if (num === 0) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const arc = (Math.PI * 2) / num;
+        participants.forEach((p, i) => {
+            const currentAngle = angle + i * arc;
+            ctx.save();
+            ctx.beginPath();
+            ctx.fillStyle = p.color;
+            ctx.moveTo(250, 250);
+            ctx.arc(250, 250, 250, currentAngle, currentAngle + arc);
+            ctx.fill();
+            ctx.strokeStyle = "white";
+            ctx.stroke();
+
+            ctx.translate(250, 250);
+            ctx.rotate(currentAngle + arc / 2);
+            
+            // 이름이 있을 때만 텍스트 그리기
+            if (p.name !== "") {
+                ctx.textAlign = "right";
+                ctx.fillStyle = "#333";
+                ctx.font = "bold 20px Arial";
+                ctx.fillText(p.name, 230, 10);
+            }
+
+            // 사진 그리기 (사진이 있으면 조금 더 크게 배치)
+            if (p.img) {
+                ctx.beginPath(); 
+                const radius = p.name === "" ? 45 : 35; // 이름 없으면 사진을 더 크게
+                const pos = p.name === "" ? 170 : 160;   // 이름 없으면 사진을 좀 더 바깥쪽으로
+                ctx.arc(pos, 0, radius, 0, Math.PI * 2); 
+                ctx.clip();
+                ctx.drawImage(p.img, pos - radius, -radius, radius * 2, radius * 2);
+            }
+            ctx.restore();
+        });
+    }
+
+    function spin() {
+        if (isSpinning || participants.length === 0) return;
+        isSpinning = true;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const rotation = Math.floor(Math.random() * 3600) + 4000;
+        const duration = 5000;
+        const start = performance.now();
+        let lastSegment = -1;
+
+        function animate(time) {
+            const elapsed = time - start;
+            const progress = Math.min(elapsed / duration, 1);
+            const easeOut = 1 - Math.pow(1 - progress, 4);
+            const currentAngle = (rotation * easeOut) * (Math.PI / 180);
+            draw(currentAngle);
+
+            const currentSegment = Math.floor((rotation * easeOut % 360) / (360 / participants.length));
+            if (currentSegment !== lastSegment) { playTickSound(); lastSegment = currentSegment; }
+
+            if (progress < 1) { requestAnimationFrame(animate); } 
+            else {
+                isSpinning = false;
+                playWinSound();
+                const finalAngle = (360 - (rotation % 360) + 270) % 360;
+                winnerIdx = Math.floor(finalAngle / (360 / participants.length)) % participants.length;
+                showResult(participants[winnerIdx]);
+            }
+        }
+        requestAnimationFrame(animate);
+    }
+
+    function showResult(winner) {
+        document.getElementById('result-modal').style.display = "flex";
+        const wImg = document.getElementById('winner-img');
+        const wName = document.getElementById('winner-name');
+        
+        if (winner.img) { 
+            wImg.src = winner.img.src; 
+            wImg.style.display = "inline-block"; 
+        } else { 
+            wImg.style.display = "none"; 
+        }
+        
+        // 당첨자 이름이 없으면 텍스트 영역 숨김
+        wName.innerText = winner.name;
+        wName.style.display = winner.name === "" ? "none" : "block";
+    }
+
+    function closeResult() {
+        participants.splice(winnerIdx, 1);
+        document.getElementById('result-modal').style.display = "none";
+        draw(0);
+        if (participants.length === 0) { alert("모두 끝났어요!"); location.reload(); }
+    }
+</script>
+</body>
+</html>
