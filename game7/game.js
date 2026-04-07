@@ -2,38 +2,23 @@
 const video = document.getElementById("input_video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
-const eatSound = document.getElementById("eatSound"); 
-if (eatSound) eatSound.volume = 0.7;
-
 const scoreText = document.getElementById("score");
 const startBtn = document.getElementById("startBtn");
-const timeOption = document.getElementById("timeOption");
-const timeSelect = document.getElementById("timeSelect");
+const backBtn = document.getElementById("backBtn");
+const startContainer = document.getElementById("startContainer");
 
-function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
+const eatSound = document.getElementById("eatSound"); 
+if (eatSound) { eatSound.volume = 0.7; }
 
 let score = 0;
 let gameStarted = false;
-let strawberries = []; 
-let strawberryInterval;
-let timer;
-let gameTime = 60;
+let strawberries = [];
+let feedbacks = [];    
+let eatingEffects = []; 
+let players = []; 
+let strawberryInterval, timer, gameTime, maxPlayers, gameLevel;
 
-// 입 위치 및 상태 관련 변수
-let mouthX = canvas.width / 2;
-let mouthY = canvas.height / 2;
-let isMouthOpen = false; 
-
-// 인식 위치 보정용 변수
-let videoWidth = 640;
-let videoHeight = 480;
-
-// ================= 2. 딸기 이미지 로드 =================
+// ================= 2. 이미지 로드 =================
 const strawberryImages = [];
 const imageSources = ['strawberry1.png', 'strawberry2.png', 'strawberry3.png'];
 imageSources.forEach(src => {
@@ -41,35 +26,96 @@ imageSources.forEach(src => {
     img.src = src;
     strawberryImages.push(img);
 });
+const greenImg = new Image();
+greenImg.src = 'greenstrawberry.png';
 
-// ================= 3. 게임 로직 =================
+// ================= 3. 랭킹 시스템 로직 =================
+
+// 랭킹 저장 (이름 포함)
+function saveRanking(playerName, newScore) {
+    let rankings = JSON.parse(localStorage.getItem('strawberryRankings')) || [];
+    const date = new Date().toLocaleDateString();
+    
+    // 이름이 없으면 '무명 딸기'로 저장
+    const name = playerName.trim() || "무명 딸기";
+    
+    rankings.push({ name: name, score: newScore, date: date });
+    
+    // 점수 높은 순 정렬 -> 상위 5명
+    rankings.sort((a, b) => b.score - a.score);
+    rankings = rankings.slice(0, 5);
+    
+    localStorage.setItem('strawberryRankings', JSON.stringify(rankings));
+    return rankings;
+}
+
+// 랭킹판 표시
+function showRankingBoard(rankings) {
+    let boardMsg = "🏆 [ 명예의 전당 ] 🏆\n\n";
+    rankings.forEach((r, i) => {
+        boardMsg += `${i + 1}등: ${r.name} - ${r.score}점 (${r.date})\n`;
+    });
+    alert(boardMsg);
+}
+
+// ================= 4. 게임 보조 함수 =================
+function createScoreFeedback(x, y, text, color) {
+    feedbacks.push({ x, y, text, color, opacity: 1.0, life: 40 });
+}
+
+function createEatingEffect(x, y) {
+    eatingEffects.push({ x, y, life: 25 });
+}
+
 function createStrawberry() {
     if (!gameStarted) return;
-    const img = strawberryImages[Math.floor(Math.random() * strawberryImages.length)];
-    strawberries.push({
-        x: Math.random() * (canvas.width - 100) + 50,
-        y: -100,
-        speed: 4 + Math.random() * 5, 
-        size: 90 + Math.random() * 40,
-        img: img
+    let isGreen = false;
+    if (gameLevel === 2) isGreen = Math.random() < 0.2; 
+    else if (gameLevel === 3) isGreen = Math.random() < 0.4;
+
+    const img = isGreen ? greenImg : strawberryImages[Math.floor(Math.random() * 3)];
+    const size = isGreen ? 120 : 90;
+    
+    strawberries.push({ 
+        x: Math.random() * (canvas.width - 150) + 75, 
+        y: -100, 
+        speed: 2.5 + Math.random() * 3, 
+        size, 
+        img, 
+        type: isGreen ? 'bad' : 'good',
+        isCaptured: false 
     });
 }
 
+// ================= 5. 이벤트 및 시작 로직 =================
 startBtn.addEventListener("click", () => {
-    gameStarted = true;
+    maxPlayers = parseInt(document.getElementById("playerSelect").value) || 1;
+    gameLevel = parseInt(document.getElementById("levelSelect").value) || 1;
+    gameTime = parseInt(document.getElementById("timeOption").value) || 60;
+    
     score = 0;
-    strawberries = []; // 기존 딸기 초기화
-    startBtn.style.display = "none";
-    timeSelect.style.display = "none";
-    gameTime = parseInt(timeOption.value);
-
+    gameStarted = true;
+    strawberries = [];
+    feedbacks = [];
+    eatingEffects = [];
+    
+    players = Array.from({ length: maxPlayers }, () => ({ 
+        x: -1000, y: -1000, 
+        isMouthOpen: false, 
+        capturedStrawberry: null 
+    }));
+    
+    scoreText.innerText = `🍓 점수: 0 | ⏰ 시간: ${gameTime}`;
+    startContainer.style.display = "none";
+    backBtn.style.display = "block";
+    
     clearInterval(strawberryInterval);
-    strawberryInterval = setInterval(createStrawberry, 400); 
-
+    strawberryInterval = setInterval(createStrawberry, 1000);
+    
     clearInterval(timer);
     timer = setInterval(() => {
         gameTime--;
-        scoreText.innerText = `🍓 딸기 점수: ${score} | ⏰ 남은시간: ${gameTime}`;
+        scoreText.innerText = `🍓 점수: ${score} | ⏰ 시간: ${gameTime}`;
         if (gameTime <= 0) endGame();
     }, 1000);
 });
@@ -78,137 +124,145 @@ function endGame() {
     clearInterval(timer);
     clearInterval(strawberryInterval);
     gameStarted = false;
-
-    setTimeout(() => {
-        const name = prompt("딸기를 맛있게 먹은 어린이의 이름은? 😊");
-        saveScore(name || "익명", score);
-        showRanking();
-    }, 100);
-}
-
-function saveScore(name, score) {
-    let scores = JSON.parse(localStorage.getItem("strawberryScores")) || [];
-    scores.push({ name, score, date: new Date().toLocaleDateString() });
-    scores.sort((a, b) => b.score - a.score);
-    localStorage.setItem("strawberryScores", JSON.stringify(scores.slice(0, 10)));
-}
-
-function showRanking() {
-    let scores = JSON.parse(localStorage.getItem("strawberryScores")) || [];
-    let text = "🏆 새콤달콤 딸기 먹기 왕 🍓\n\n";
-    scores.forEach((s, i) => { text += `${i + 1}등: ${s.name} (${s.score}개)\n`; });
-    alert(text);
+    
+    // 1. 점수 알림
+    alert(`게임 종료! 최종 점수: ${score}점`);
+    
+    // 2. 이름 입력받기
+    const playerName = prompt("명예의 전당에 올릴 이름을 적어주세요!", "멋쟁이 어린이");
+    
+    // 3. 랭킹 저장 및 표시 (이름 전달)
+    if (playerName !== null) {
+        const rankings = saveRanking(playerName, score);
+        showRankingBoard(rankings);
+    }
+    
     location.reload();
 }
 
-// ================= 4. 메인 루프 (그리기 및 충돌 체크) =================
+backBtn.addEventListener("click", () => { location.reload(); });
+
+// ================= 6. 메인 애니메이션 루프 =================
 function update() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.save();
+    ctx.scale(-1, 1);
+    ctx.translate(-canvas.width, 0);
+    ctx.globalAlpha = 0.4; 
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    ctx.restore();
 
-    if (!gameStarted) {
-        requestAnimationFrame(update);
-        return;
-    }
-
-    // [개선] "냠냠!" 표시: 입술 점을 없애고 글자만 깔끔하게 표시
-    if (!isMouthOpen) {
-        ctx.fillStyle = "white";
-        ctx.strokeStyle = "#ff1111";
-        ctx.lineWidth = 4;
-        ctx.font = "bold 40px 'Arial Rounded MT Bold'";
-        ctx.textAlign = "center";
-        
-        // 보정된 mouthY 위치에 글자 출력
-        ctx.strokeText("냠냠!", mouthX, mouthY);
-        ctx.fillText("냠냠!", mouthX, mouthY);
-    }
-
-    // 딸기 업데이트 및 충돌 판정
-    for (let i = strawberries.length - 1; i >= 0; i--) {
-        let s = strawberries[i];
-        s.y += s.speed;
-        s.x += Math.sin(s.y / 60) * 2;
-
-        if (s.img.complete) {
-            ctx.drawImage(s.img, s.x - s.size/2, s.y - s.size/2, s.size, s.size);
-        }
-
-        // 충돌 판정: 입을 다물고 있을 때(냠냠 상태) 거리 체크
-        let dist = Math.hypot(s.x - mouthX, s.y - mouthY);
-        if (!isMouthOpen && dist < 100) { 
-            score++;
-            if (eatSound) {
-                eatSound.currentTime = 0;
-                eatSound.play().catch(() => {});
+    if (gameStarted) {
+        players.forEach(p => {
+            if (p.x > 0) {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+                ctx.fillStyle = p.isMouthOpen ? "#ff0000" : "#ffff00";
+                ctx.fill();
+                ctx.closePath();
             }
-            strawberries.splice(i, 1);
-            continue;
+        });
+
+        for (let i = strawberries.length - 1; i >= 0; i--) {
+            let s = strawberries[i];
+            let beingHeld = false;
+
+            players.forEach(p => {
+                const dist = Math.hypot(s.x - p.x, s.y - p.y);
+                if (!s.isCaptured && p.isMouthOpen && dist < 60) {
+                    if (!p.capturedStrawberry) {
+                        s.isCaptured = true;
+                        p.capturedStrawberry = s;
+                    }
+                }
+                
+                if (s.isCaptured && p.capturedStrawberry === s) {
+                    s.x = p.x; s.y = p.y;
+                    beingHeld = true;
+                    if (!p.isMouthOpen) {
+                        if (s.type === 'good') {
+                            score++;
+                            createScoreFeedback(p.x, p.y, "+1", "#ff0000");
+                            if (eatSound) { eatSound.currentTime = 0; eatSound.play().catch(()=>{}); }
+                        } else {
+                            score = Math.max(0, score - 1);
+                            createScoreFeedback(p.x, p.y, "-1", "#008000");
+                        }
+                        createEatingEffect(p.x, p.y);
+                        strawberries.splice(i, 1);
+                        p.capturedStrawberry = null;
+                    }
+                }
+            });
+
+            if (!beingHeld) {
+                s.y += s.speed;
+                ctx.drawImage(s.img, s.x - s.size/2, s.y - s.size/2, s.size, s.size);
+                if (s.y > canvas.height + 100) strawberries.splice(i, 1);
+            } else {
+                ctx.drawImage(s.img, s.x - s.size/2, s.y - s.size/2, s.size, s.size);
+            }
         }
 
-        // 화면 밖으로 나간 딸기 제거
-        if (s.y > canvas.height + 100) {
-            strawberries.splice(i, 1);
-        }
+        eatingEffects.forEach((eff, i) => {
+            ctx.fillStyle = "white"; ctx.strokeStyle = "#ff3333"; ctx.lineWidth = 4;
+            ctx.font = "bold 45px sans-serif"; ctx.textAlign = "center";
+            ctx.strokeText("냠냠!", eff.x, eff.y - 50); ctx.fillText("냠냠!", eff.x, eff.y - 50);
+            eff.life--; if (eff.life <= 0) eatingEffects.splice(i, 1);
+        });
+
+        feedbacks.forEach((f, i) => {
+            ctx.save(); ctx.globalAlpha = f.opacity; ctx.fillStyle = f.color;
+            ctx.font = "bold 45px sans-serif"; ctx.textAlign = "center";
+            ctx.fillText(f.text, f.x, f.y); ctx.restore();
+            f.y -= 2; f.opacity -= 0.025; f.life--; if (f.life <= 0) feedbacks.splice(i, 1);
+        });
     }
-
     requestAnimationFrame(update);
 }
 
-// ================= 5. 얼굴 인식 (MediaPipe) =================
-const faceMesh = new FaceMesh({
-    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+// ================= 7. MediaPipe 설정 =================
+const faceMesh = new FaceMesh({ 
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` 
 });
 
-faceMesh.setOptions({
-    maxNumFaces: 1,
-    refineLandmarks: true,
-    minDetectionConfidence: 0.5,
-    minTrackingConfidence: 0.5
+faceMesh.setOptions({ 
+    maxNumFaces: 4, refineLandmarks: true, 
+    minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 
 });
 
 faceMesh.onResults(results => {
-    // 비디오 해상도 업데이트
-    if (video.videoWidth) {
-        videoWidth = video.videoWidth;
-        videoHeight = video.videoHeight;
-    }
-
-    if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-        const lm = results.multiFaceLandmarks[0];
-        
-        // 마스크 착용 대응을 위해 코(1)와 턱(152) 랜드마크 활용
-        const nose = lm[1];
-        const chin = lm[152];
-        const topLip = lm[13];
-        const bottomLip = lm[14];
-
-        // 입 벌림 판정 (얼굴 크기 대비 입술 간격 비율)
-        const faceHeight = Math.abs(chin.y - lm[10].y);
-        const mouthDistanceRatio = Math.abs(bottomLip.y - topLip.y) / faceHeight;
-        isMouthOpen = mouthDistanceRatio > 0.05; 
-
-        // 좌표 왜곡 보정 계산
-        const scaleX = canvas.width / videoWidth;
-        const scaleY = canvas.height / videoHeight;
-
-        // X좌표: 거울 모드 대응
-        const targetX = (canvas.width) - (topLip.x * videoWidth * scaleX);
-        
-        // Y좌표: 마스크를 써도 코와 턱 사이에 입이 있으므로 그 위치를 추정하여 계산
-        // 코와 턱 사이의 약 65% 지점을 입 위치로 잡으면 마스크 위에서도 정확합니다.
-        const estimatedMouthY = (nose.y * 0.6 + chin.y * 0.4) * videoHeight * scaleY;
-
-        // 부드럽게 따라오도록 설정
-        mouthX += (targetX - mouthX) * 0.8;
-        mouthY += (estimatedMouthY - mouthY) * 0.8;
+    if (results.multiFaceLandmarks) {
+        for (let i = 0; i < maxPlayers; i++) {
+            const lm = results.multiFaceLandmarks[i];
+            if (lm && players[i]) {
+                const topLip = lm[13], bottomLip = lm[14];
+                const faceHeight = Math.abs(lm[152].y - lm[10].y);
+                players[i].isMouthOpen = (Math.abs(bottomLip.y - topLip.y) / faceHeight) > 0.045;
+                const targetX = (1 - topLip.x) * canvas.width;
+                const targetY = ((topLip.y + bottomLip.y) / 2) * canvas.height;
+                players[i].x += (targetX - players[i].x) * 0.6;
+                players[i].y += (targetY - players[i].y) * 0.6;
+            } else if (players[i]) {
+                players[i].x = -1000;
+            }
+        }
     }
 });
 
-const camera = new Camera(video, {
-    onFrame: async () => { await faceMesh.send({ image: video }); },
-    width: 640,
-    height: 480
-});
-
-camera.start();
-update();
+async function startCamera() {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 } });
+    video.srcObject = stream;
+    video.onloadedmetadata = () => {
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        video.play();
+        const sendFrames = async () => { 
+            if (!video.paused) await faceMesh.send({ image: video });
+            requestAnimationFrame(sendFrames); 
+        };
+        sendFrames();
+        update();
+    };
+}
+startCamera();

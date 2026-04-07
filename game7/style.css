@@ -1,23 +1,31 @@
+/* style.css - 전체 레이아웃 및 옵션 창 수정본 */
+
 body {
   margin: 0;
   overflow: hidden;
+  background-color: #fff0f0;
+  font-family: 'Arial Rounded MT Bold', 'Noto Sans KR', sans-serif;
 }
 
+/* 카메라 화면 설정 */
 video {
   position: absolute;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: scaleX(-1);
+  transform: scaleX(-1); /* 좌우 반전 */
+  z-index: 1;
 }
 
+/* 게임 그래픽 캔버스 */
 canvas {
   position: absolute;
   width: 100%;
   height: 100%;
-  background: rgba(255, 240, 240, 0.2); /* 연한 딸기우유 빛 */
+  z-index: 2;
 }
 
+/* 점수판 */
 #score {
   position: fixed;
   top: 20px;
@@ -25,9 +33,30 @@ canvas {
   font-size: 32px;
   color: #ff3333;
   font-weight: bold;
-  text-shadow: 2px 2px 4px white;
+  text-shadow: 2px 2px 5px white;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 10px 20px;
+  border-radius: 20px;
 }
 
+/* 처음으로 버튼 */
+#backBtn {
+  position: fixed;
+  top: 85px;
+  left: 20px;
+  font-size: 20px;
+  padding: 10px 20px;
+  background: white;
+  color: #ff3333;
+  border: 3px solid #ffcccc;
+  border-radius: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 15;
+}
+
+/* 중앙 시작 메뉴 컨테이너 */
 #startContainer {
   position: fixed;
   top: 50%;
@@ -36,41 +65,63 @@ canvas {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
-  z-index: 10;
-}
-
-#timeSelect {
-  font-size: 24px;
-  padding: 15px 25px;
+  gap: 40px;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 40px;
   border-radius: 30px;
-  background: rgba(255, 80, 80, 0.9); /* 딸기 레드 */
-  color: white;
-  font-family: 'Arial Rounded MT Bold', 'Noto Sans KR', sans-serif;
-  box-shadow: 0 5px 15px rgba(255, 0, 0, 0.3);
+  border: 6px solid #ffcccc;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
 }
 
-#timeOption {
-  font-size: 20px;
-  margin-left: 10px;
-  border-radius: 10px;
-  padding: 5px;
+/* 제목 스타일 */
+h1 {
+  color: #ff3333;
+  margin-bottom: 10px;
 }
 
-#startBtn {
-  font-size: 32px;
-  padding: 20px 60px;
-  border: none;
-  border-radius: 50px;
-  background: linear-gradient(135deg, #ff4d4d, #cc0000); /* 딸기 그라데이션 */
-  color: white;
-  font-family: 'Arial Rounded MT Bold', 'Noto Sans KR', sans-serif;
-  box-shadow: 0 10px 25px rgba(200, 0, 0, 0.4);
+/* --- 요청하신 조절된 옵션창 스타일 --- */
+.option-item {
+  font-size: 22px;
+  padding: 8px 15px;
+  border-radius: 15px;
+  background: #ffe0e0;
+  color: #cc0000;
+  display: flex;
+  flex-direction: column; 
+  align-items: center;
+  gap: 8px;
+  width: 240px;
+  font-weight: bold;
+}
+
+/* 선택창(Select) 크기 */
+.option-item select {
+  width: 90%;
+  height: 50px;
+  font-size: 18px;
+  border-radius: 12px;
+  border: 2px solid #ffaaaa;
+  text-align: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  background: white;
 }
 
-#startBtn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 12px 25px rgba(150, 0, 0, 0.6);
+/* 시작 버튼 */
+#startBtn {
+  margin-top: 10px;
+  font-size: 28px;
+  padding: 15px 50px;
+  border: none;
+  border-radius: 40px;
+  background: linear-gradient(135deg, #ff6b6b, #ff0000);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 5px 15px rgba(255, 0, 0, 0.3);
+  transition: transform 0.1s;
+}
+
+#startBtn:active {
+  transform: scale(0.95);
 }
