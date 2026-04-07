@@ -4,166 +4,178 @@
     <meta charset="UTF-8">
     <title>유치원의 하루</title>
     <style>
-        /* 기본 스타일 */
         body { font-family: 'Jua', sans-serif; background: #f0f0f0; text-align: center; margin: 0; padding: 0; }
         h1 { margin-top: 20px; color: #333; }
         
-        /* -------------------------------------------------- */
-        /* 추가된 배너 스타일 (여기서 디자인을 수정할 수 있어요) */
-        /* -------------------------------------------------- */
         .banner-container {
-            background-color: #333; 
-            color: white;           
-            padding: 12px 20px;
-            position: relative; 
-            width: 100%;
-            z-index: 9999;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            font-size: 0.95rem;
-            box-sizing: border-box; /* 패딩이 너비에 영향을 주지 않도록 설정 */
+            background-color: #333; color: white; padding: 12px 20px;
+            position: relative; width: 100%; z-index: 9999;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2); font-size: 0.95rem; box-sizing: border-box;
         }
+        .close-btn { background: none; border: none; color: #aaa; font-size: 24px; cursor: pointer; position: absolute; right: 20px; }
 
-        .banner-content {
-            display: flex;
-            gap: 20px;
-            text-align: center;
-        }
-
-        .banner-text {
-            margin: 0 5px;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            color: #aaa;
-            font-size: 24px;
-            cursor: pointer;
-            position: absolute;
-            right: 20px;
-            transition: 0.2s;
-        }
-
-        .close-btn:hover {
-            color: white;
-        }
-
-        /* 모바일용 레이아웃 조정 */
-        @media (max-width: 768px) {
-            .banner-content {
-                flex-direction: column;
-                gap: 5px;
-                padding-right: 30px;
-            }
-        }
-        /* -------------------------------------------------- */
-
-        .tab-menu { 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            gap: 10px; 
-            margin-top: 20px; 
-            flex-wrap: wrap; 
-        }
-
-        .tab-btn { 
-            padding: 12px 25px; 
-            font-size: 1.1rem; 
-            cursor: pointer; 
-            border: none; 
-            border-radius: 10px; 
-            background: white; 
-            transition: 0.3s; 
-            box-shadow: 0 4px 0 #ddd;
-        }
+        .tab-menu { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 20px; flex-wrap: wrap; padding: 0 10px; }
+        .tab-btn { padding: 12px 25px; font-size: 1.1rem; cursor: pointer; border: none; border-radius: 10px; background: white; transition: 0.3s; box-shadow: 0 4px 0 #ddd; }
         .tab-btn.active { background: #FFB7C5; color: white; box-shadow: 0 4px 0 #FF8E9E; }
         
-        .fullscreen-btn { 
-            padding: 12px 20px; 
-            font-size: 1.1rem; 
-            cursor: pointer; 
-            border: none; 
-            border-radius: 10px; 
-            background: #4A90E2; 
-            color: white; 
-            transition: 0.3s; 
-            box-shadow: 0 4px 0 #357ABD;
-            margin-left: 20px;
-        }
-        .fullscreen-btn:hover { background: #357ABD; }
-        .fullscreen-btn:active { transform: translateY(3px); box-shadow: none; }
+        .fullscreen-btn { padding: 12px 20px; font-size: 1.1rem; cursor: pointer; border: none; border-radius: 10px; background: #4A90E2; color: white; transition: 0.3s; box-shadow: 0 4px 0 #357ABD; margin-left: 20px; }
 
+        /* ⭐ 전체화면 대응 및 스크롤 차단 CSS */
         .game-container { 
             width: 95%; 
             max-width: 1200px; 
             height: 75vh; 
             margin: 20px auto; 
-            background: transparent; 
+            background: #fff; 
             border-radius: 20px; 
             overflow: hidden; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05); 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            position: relative;
         }
-        iframe { width: 100%; height: 100%; border: none; border-radius: 20px; }
+
+        #gameFrame { 
+            width: 100% !important; 
+            height: 100% !important; 
+            border: none; 
+            display: block;
+        }
+
+        /* 전체화면 모드일 때: 스크롤을 완전히 숨기고 꽉 채움 */
+        .game-container:fullscreen {
+            width: 100vw !important;
+            height: 100vh !important;
+            max-width: none !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            overflow: hidden; /* 스크롤바 숨기기 */
+        }
+        .game-container:-webkit-full-screen {
+            width: 100vw !important; height: 100vh !important;
+            max-width: none !important; margin: 0 !important; border-radius: 0 !important;
+            overflow: hidden;
+        }
+
+        .visitor-counter { margin: 50px 0; padding-bottom: 40px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .visitor-label { font-size: 0.85rem; color: #888; font-weight: bold; letter-spacing: 1px; }
     </style>
 </head>
 <body>
 
 <div id="notice-banner" class="banner-container">
-    <div class="banner-content">
-        <span class="banner-text">🎮 <strong>안내:</strong> 게임은 전체 화면으로 즐겨 주세요!</span>
-        <span class="banner-text">🔓 수정, 배포, 공유 모두 가능합니다. (출처만 남겨 주세요)</span>
-    </div>
-    <button class="close-btn" onclick="closeBanner()">&times;</button>
+    <span>🎮 <strong>안내:</strong> 게임은 전체 화면으로 즐겨 주세요!, 🎞️<strong>안내:</strong> 화면 비율은 100%로 즐겨 주세요!,  ❤️배포 및 수정,공유는 자유입니다. 출처 하나만 남겨 주세요!)</span> 
+    <button class="close-btn" onclick="document.getElementById('notice-banner').style.display='none'">&times;</button>
 </div>
 
     <h1>🎮 유치원의 하루-by.Ho</h1>
     
     <div class="tab-menu">
         <button class="tab-btn active" onclick="loadGame('game1/game1_timer.html', this)">🐰 정리 타이머</button>
-        <button class="tab-btn" onclick="loadGame('game2/game2_pop.html', this)">🌸 벚꽃 팝콘(웹캠필요)</button>
+        <button class="tab-btn" onclick="loadGame('game2/game2_pop.html', this)">🌸 벚꽃 팝콘</button>
         <button class="tab-btn" onclick="loadGame('game3/game3_memory.html', this)">❤️ 메모리 카드</button>
-        <button class="tab-btn" onclick="loadGame('game4/game4_puzzle.html', this)">🧩퍼즐 놀이</button>
-        <button class="tab-btn" onclick="loadGame('game5/game5_face.html', this)">📷얼굴 맞추기</button>
-        <button class="tab-btn" onclick="loadGame('game6/game6_mix.html', this)">🌈얼굴 섞기</button>
-        <button class="tab-btn" onclick="loadGame('game7/game7_strawberry.html', this)">🍓딸기 먹기(웹캠필요)</button>
-        <button class="tab-btn" onclick="loadGame('game8/game8_roulette.html', this)">🎈팡팡 룰렛</button>
-        
-        <button class="fullscreen-btn" onclick="openGameFullscreen()">🖥️ 전체화면</button>
+        <button class="tab-btn" onclick="loadGame('game4/game4_puzzle.html', this)">🧩 퍼즐 놀이</button>
+        <button class="tab-btn" onclick="loadGame('game5/game5_face.html', this)">📷 얼굴 맞추기</button>
+        <button class="tab-btn" onclick="loadGame('game6/game6_mix.html', this)">🌈 얼굴 섞기</button>
+        <button class="tab-btn" onclick="loadGame('game7/game7_strawberry.html', this)">🍓 딸기 먹기</button>
+        <button class="tab-btn" onclick="loadGame('game8/game8_roulette.html', this)">🎈 팡팡 룰렛</button>
+        <button class="tab-btn" onclick="loadGame('game9/game9_rice.html', this)">🍚 영양사 놀이</button>
+        <button class="fullscreen-btn" onclick="toggleFullscreen()">🖥️ 전체화면</button>
     </div>
 
     <div id="gameContainer" class="game-container">
-        <iframe id="gameFrame" src="game1/game1_timer.html"></iframe>
+        <iframe id="gameFrame" src="game1/game1_timer.html" allowfullscreen></iframe>
+    </div>
+
+    <div class="visitor-counter">
+        <span class="visitor-label">TOTAL VISITORS</span>
+        <span>👥 전체 방문자: <b id="totalCount">0</b></span>
+        <span>📅 오늘 방문자: <b id="todayCount">0</b></span>
     </div>
 
     <script>
-        // 게임 화면 전환 함수
         function loadGame(url, btn) {
             document.getElementById('gameFrame').src = url;
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
         }
 
-        // 전체화면 모드 함수
-        function openGameFullscreen() {
-            const elem = document.getElementById('gameFrame');
-            if (elem.requestFullscreen) {
-                elem.requestFullscreen();
-            } else if (elem.webkitRequestFullscreen) {
-                elem.webkitRequestFullscreen();
-            } else if (elem.msRequestFullscreen) {
-                elem.msRequestFullscreen();
+        function toggleFullscreen() {
+            const container = document.getElementById('gameContainer');
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                if (container.requestFullscreen) { container.requestFullscreen(); }
+                else if (container.webkitRequestFullscreen) { container.webkitRequestFullscreen(); }
+            } else {
+                if (document.exitFullscreen) { document.exitFullscreen(); }
+                else if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); }
+            }
+        }
+    </script>
+
+<script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // 1. Firebase 설정 (재호님의 프로젝트 정보입니다)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAReVfS5fsNSr5WeWggSUoBe7MRpTZympM",
+            authDomain: "kinder-ho.firebaseapp.com",
+            projectId: "kinder-ho",
+            storageBucket: "kinder-ho.firebasestorage.app",
+            messagingSenderId: "222827051474",
+            appId: "1:222827051474:web:1265a8b4a157cdbacfb00b",
+            measurementId: "G-DCECSYRZVQ"
+        };
+
+        // 2. Firebase 초기화
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD 형식
+
+        // 3. 방문자 고유 ID 생성 (이미 있다면 기존 것 사용)
+        let visitorId = localStorage.getItem("visitorId");
+        if (!visitorId) {
+            visitorId = crypto.randomUUID();
+            localStorage.setItem("visitorId", visitorId);
+        }
+
+        const visitRef = doc(db, "visitors", visitorId);
+        const statsRef = doc(db, "stats", "main");
+
+        async function updateVisitor() {
+            try {
+                // 현재 데이터 가져오기
+                const visitSnap = await getDoc(visitRef);
+                const statsSnap = await getDoc(statsRef);
+                
+                // 장부가 없으면 초기 구조 생성
+                let statsData = statsSnap.exists() ? statsSnap.data() : { total: 0, daily: {} };
+                if (!statsData.daily) statsData.daily = {};
+
+                // 오늘 처음 방문했는지 확인
+                if (!visitSnap.exists() || visitSnap.data().lastVisit !== today) {
+                    // 개인 방문 기록 업데이트
+                    await setDoc(visitRef, { lastVisit: today }, { merge: true });
+
+                    // 전체 숫자 및 오늘 숫자 1씩 증가
+                    statsData.total = (statsData.total || 0) + 1;
+                    statsData.daily[today] = (statsData.daily[today] || 0) + 1;
+
+                    // 서버 장부(Firestore)에 저장
+                    await setDoc(statsRef, statsData, { merge: true });
+                }
+
+                // 화면에 숫자 표시 (데이터를 다 처리한 후 출력)
+                document.getElementById("totalCount").innerText = statsData.total;
+                document.getElementById("todayCount").innerText = statsData.daily[today] || 0;
+
+            } catch (e) {
+                console.error("방문자 카운팅 중 에러 발생:", e);
+                // 에러 발생 시 0으로 표시되지 않도록 기본값 유지
             }
         }
 
-        // 2. 배너 닫기 함수
-        function closeBanner() {
-            const banner = document.getElementById('notice-banner');
-            banner.style.display = 'none';
-        }
+        // 함수 실행
+        updateVisitor();
     </script>
 </body>
 </html>

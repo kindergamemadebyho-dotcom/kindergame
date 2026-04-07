@@ -1,10 +1,1 @@
-# <p align="right">
-
-# &#x20; <a href="https://u8views.com/github/본인계정명">
-
-# &#x20;   <img src="https://u8views.com/api/v1/github/profiles/kindergamemadebyho/views/day-total-count.svg" alt="Views">
-
-# &#x20; </a>
-
-# </p>
-
+[![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fkindergamemadebyho-dotcom.github.io%2Fkindergame%2F&count_bg=%23FFB7C5&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=VISITORS&edge_flat=false)](https://hits.seeyoufarm.com)
