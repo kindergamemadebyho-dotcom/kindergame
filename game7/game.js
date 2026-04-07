@@ -18,38 +18,49 @@ let eatingEffects = [];
 let players = []; 
 let strawberryInterval, timer, gameTime, maxPlayers, gameLevel;
 
-// ================= 2. 이미지 로드 =================
-const strawberryImages = [];
-const imageSources = ['strawberry1.png', 'strawberry2.png', 'strawberry3.png'];
-imageSources.forEach(src => {
-    const img = new Image();
-    img.src = src;
-    strawberryImages.push(img);
-});
-const greenImg = new Image();
-greenImg.src = 'greenstrawberry.png';
+// ================= 2. 이미지 로드 (다중 업로드 지원) =================
+let goodImages = [];
+let badImages = [];
+
+function loadDefaultImages() {
+    const dGood = new Image(); dGood.src = 'strawberry1.png';
+    const dBad = new Image(); dBad.src = 'greenstrawberry.png';
+    goodImages = [dGood];
+    badImages = [dBad];
+}
+loadDefaultImages();
+
+function handleFileUpload(event, targetArray) {
+    const files = event.target.files;
+    if (files.length > 0) {
+        targetArray.length = 0; 
+        Array.from(files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.src = e.target.result;
+                targetArray.push(img);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+}
+
+document.getElementById("goodUploader").addEventListener("change", (e) => handleFileUpload(e, goodImages));
+document.getElementById("badUploader").addEventListener("change", (e) => handleFileUpload(e, badImages));
 
 // ================= 3. 랭킹 시스템 로직 =================
-
-// 랭킹 저장 (이름 포함)
 function saveRanking(playerName, newScore) {
     let rankings = JSON.parse(localStorage.getItem('strawberryRankings')) || [];
     const date = new Date().toLocaleDateString();
-    
-    // 이름이 없으면 '무명 딸기'로 저장
     const name = playerName.trim() || "무명 딸기";
-    
     rankings.push({ name: name, score: newScore, date: date });
-    
-    // 점수 높은 순 정렬 -> 상위 5명
     rankings.sort((a, b) => b.score - a.score);
     rankings = rankings.slice(0, 5);
-    
     localStorage.setItem('strawberryRankings', JSON.stringify(rankings));
     return rankings;
 }
 
-// 랭킹판 표시
 function showRankingBoard(rankings) {
     let boardMsg = "🏆 [ 명예의 전당 ] 🏆\n\n";
     rankings.forEach((r, i) => {
@@ -69,12 +80,14 @@ function createEatingEffect(x, y) {
 
 function createStrawberry() {
     if (!gameStarted) return;
-    let isGreen = false;
-    if (gameLevel === 2) isGreen = Math.random() < 0.2; 
-    else if (gameLevel === 3) isGreen = Math.random() < 0.4;
+    
+    let isBad = false;
+    if (gameLevel === 2) isBad = Math.random() < 0.2; 
+    else if (gameLevel === 3) isBad = Math.random() < 0.4;
 
-    const img = isGreen ? greenImg : strawberryImages[Math.floor(Math.random() * 3)];
-    const size = isGreen ? 120 : 90;
+    const currentPool = (isBad && badImages.length > 0) ? badImages : goodImages;
+    const img = currentPool[Math.floor(Math.random() * currentPool.length)];
+    const size = isBad ? 110 : 90;
     
     strawberries.push({ 
         x: Math.random() * (canvas.width - 150) + 75, 
@@ -82,7 +95,7 @@ function createStrawberry() {
         speed: 2.5 + Math.random() * 3, 
         size, 
         img, 
-        type: isGreen ? 'bad' : 'good',
+        type: isBad ? 'bad' : 'good',
         isCaptured: false 
     });
 }
@@ -124,19 +137,12 @@ function endGame() {
     clearInterval(timer);
     clearInterval(strawberryInterval);
     gameStarted = false;
-    
-    // 1. 점수 알림
     alert(`게임 종료! 최종 점수: ${score}점`);
-    
-    // 2. 이름 입력받기
     const playerName = prompt("명예의 전당에 올릴 이름을 적어주세요!", "멋쟁이 어린이");
-    
-    // 3. 랭킹 저장 및 표시 (이름 전달)
     if (playerName !== null) {
         const rankings = saveRanking(playerName, score);
         showRankingBoard(rankings);
     }
-    
     location.reload();
 }
 

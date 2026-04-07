@@ -15,11 +15,13 @@
     <div id="score">🍓 딸기 점수: 0</div>
     <button id="backBtn" style="display:none;">처음으로</button>
 
-    <div id="startContainer">
-        <h1>🍓 딸기 많이 먹기!</h1>
-        <div id="setup-menu">
+<div id="startContainer">
+    <h1>🍓 냠냠! 맛있는 음식 먹기</h1>
+    
+    <div id="setup-menu">
+        <div class="option-group">
             <div class="option-item">
-                인원 설정
+                👥 인원 설정
                 <select id="playerSelect">
                     <option value="1">1명</option>
                     <option value="2">2명</option>
@@ -27,27 +29,37 @@
                 </select>
             </div>
             <div class="option-item">
-                난이도
+                🔥 난이도
                 <select id="levelSelect">
-                    <option value="1">쉬움</option>
-                    <option value="2">보통 (초록딸기)</option>
-                    <option value="3">어려움 (초록딸기 많음)</option>
+                    <option value="1">쉬움 (좋은 음식만)</option>
+                    <option value="2">보통 (피해야 할 음식 등장)</option>
+                    <option value="3">어려움 (피해야 할 음식 가득!)</option>
                 </select>
             </div>
             <div class="option-item">
-    게임 시간
-    <select id="timeOption">
-        <option value="30">30초</option>
-        <option value="60">1분</option>
-        <option value="120">2분</option>
-        <option value="180">3분</option>
-        <option value="240">4분</option>
-        <option value="300">5분</option>
-    </select>
-</div>
+                ⏰ 게임 시간
+                <select id="timeOption">
+                    <option value="30">30초</option>
+                    <option value="60">1분</option>
+                    <option value="120">2분</option>
+                </select>
+            </div>
         </div>
-        <button id="startBtn">게임 시작!</button>
+
+        <div class="upload-group">
+            <div class="upload-box good">
+                <label>😋 먹어야 할 음식 (여러 장 가능)</label>
+                <input type="file" id="goodUploader" accept="image/*" multiple>
+            </div>
+            <div class="upload-box bad">
+                <label>🤢 피해야 할 음식 (여러 장 가능)</label>
+                <input type="file" id="badUploader" accept="image/*" multiple>
+            </div>
+        </div>
     </div>
+
+    <button id="startBtn">게임 시작!</button>
+</div>
 
     <audio id="eatSound" src="eat.mp3"></audio>
 
