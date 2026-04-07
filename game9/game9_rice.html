@@ -19,23 +19,40 @@
             background-size: cover; z-index: 100; display: flex; align-items: center; justify-content: center; 
         }
         .setup-card { 
-            background: white; padding: 50px; border-radius: 60px; 
+            background: white; padding: 40px; border-radius: 60px; 
             border: 8px solid #ffcc99; text-align: center; 
             box-shadow: 0 20px 40px rgba(0,0,0,0.1); 
-            position: relative; width: 800px;
+            position: relative; width: 900px;
         }
-        .setup-card h1 { color: #ff8000; font-size: 3em; margin-bottom: 10px; }
-        .setup-card p { color: #666; font-size: 1.5em; margin-bottom: 30px; }
+        .setup-card h1 { color: #ff8000; font-size: 2.8em; margin-bottom: 5px; }
+        .setup-card p { color: #666; font-size: 1.2em; margin-bottom: 20px; }
 
-        .chef-img { position: absolute; bottom: -20px; left: -100px; width: 250px; z-index: 2; }
-        .utensils-img { position: absolute; top: -50px; right: -50px; width: 150px; transform: rotate(15deg); }
-
-        .file-upload-wrapper {
-            background: #fff5e6; border: 4px dashed #ffb366; border-radius: 30px;
-            padding: 40px; margin-bottom: 30px; cursor: pointer; transition: 0.3s;
+        /* 영양소별 업로드 그리드 */
+        .upload-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 25px;
         }
-        .file-upload-wrapper:hover { background: #ffe6cc; transform: translateY(-5px); }
-        #in-all { display: none; }
+        .upload-box {
+            background: #fff5e6;
+            border: 3px dashed #ffb366;
+            border-radius: 20px;
+            padding: 15px 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: 0.3s;
+        }
+        .upload-box:hover { background: #ffe6cc; }
+        .upload-box label { 
+            font-size: 1.1em; color: #e67e22; margin-bottom: 10px; cursor: pointer;
+            display: block; width: 100%;
+        }
+        .upload-box input { width: 80%; font-size: 0.8em; }
+
+        .chef-img { position: absolute; bottom: -20px; left: -100px; width: 200px; z-index: 2; }
+        .utensils-img { position: absolute; top: -40px; right: -40px; width: 120px; transform: rotate(15deg); }
 
         /* --- 게임 메인 화면 --- */
         #game-screen { display: none; flex: 1; padding: 15px; flex-direction: column; box-sizing: border-box; }
@@ -82,11 +99,29 @@
             <img src="chef.png" class="chef-img" alt="선생님">
             <img src="utensils.png" class="utensils-img" alt="도구">
             <h1>오늘의 식단 꾸미기</h1>
-            <p>사진을 올리거나, 바로 시작 버튼을 눌러보세요!</p>
+            <p>영양소별로 사진을 넣어주세요! (안 넣어도 기본 음식으로 시작 가능해요)</p>
             
-            <div class="file-upload-wrapper" onclick="document.getElementById('in-all').click()">
-                <span id="file-count" style="font-size: 1.5em; color: #ff9933;">📂 클릭해서 사진 올리기 (선택)</span>
-                <input type="file" id="in-all" multiple onchange="updateFileCount()">
+            <div class="upload-grid">
+                <div class="upload-box">
+                    <label for="in-carb">🍚 탄수화물</label>
+                    <input type="file" id="in-carb" multiple accept="image/*">
+                </div>
+                <div class="upload-box">
+                    <label for="in-protein">🍖 단백질</label>
+                    <input type="file" id="in-protein" multiple accept="image/*">
+                </div>
+                <div class="upload-box">
+                    <label for="in-fat">🥑 지방</label>
+                    <input type="file" id="in-fat" multiple accept="image/*">
+                </div>
+                <div class="upload-box">
+                    <label for="in-calcium">🥛 칼슘</label>
+                    <input type="file" id="in-calcium" multiple accept="image/*">
+                </div>
+                <div class="upload-box">
+                    <label for="in-mineral">🥦 무기질</label>
+                    <input type="file" id="in-mineral" multiple accept="image/*">
+                </div>
             </div>
 
             <button class="btn" style="background:#ff9933; color:white; width: 300px;" onclick="startGame()">급식 시작하기!</button>
@@ -154,11 +189,6 @@
             }
         }
 
-        function updateFileCount() {
-            const files = document.getElementById('in-all').files;
-            document.getElementById('file-count').innerText = files.length > 0 ? `✅ 사진 ${files.length}개 선택됨` : `📂 클릭해서 사진 올리기 (선택)`;
-        }
-
         function startGame() {
             audioCtx.resume();
             const listContainer = document.getElementById('master-list');
@@ -169,19 +199,22 @@
                 createFoodItem(foodName + ".png", foodName, masterFoodData[foodName]); 
             }
             
-            // 2. 추가 업로드 사진 처리 (없어도 통과!)
-            const files = document.getElementById('in-all').files;
-            if(files.length > 0) {
-                Array.from(files).forEach(file => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        let type = "mineral";
-                        for (let key in masterFoodData) { if (file.name.includes(key)) { type = masterFoodData[key]; break; } }
-                        createFoodItem(e.target.result, file.name, type);
-                    };
-                    reader.readAsDataURL(file);
-                });
-            }
+            // 2. 영양소별 업로드 사진 처리
+            const types = ['carb', 'protein', 'fat', 'calcium', 'mineral'];
+            types.forEach(type => {
+                const inputElement = document.getElementById(`in-${type}`);
+                const files = inputElement.files;
+                if(files.length > 0) {
+                    Array.from(files).forEach(file => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            // 사용자가 넣은 칸의 영양소를 강제로 부여
+                            createFoodItem(e.target.result, file.name, type);
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                }
+            });
             
             document.getElementById('setup-screen').style.display = 'none';
             document.getElementById('game-screen').style.display = 'flex';
