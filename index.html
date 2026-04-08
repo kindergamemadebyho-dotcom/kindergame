@@ -61,11 +61,24 @@ h1 { margin-top:20px; }
     color:white;
 }
 
+/* ⭐ 새로 추가된 안내창 스타일 */
+.info-banner {
+    background-color: #fff4d1;
+    border: 1px solid #ffe082;
+    padding: 10px;
+    margin: 20px auto 0;
+    width: 90%;
+    border-radius: 10px;
+    font-size: 0.9em;
+    color: #856404;
+    line-height: 1.5;
+}
+
 /* 게임 화면 */
 .game-container {
     width:95%;
     height:75vh;
-    margin:20px auto;
+    margin:10px auto 20px; /* 안내창과의 간격 조정 */
     background:white;
     border-radius:20px;
     overflow:hidden;
@@ -89,17 +102,14 @@ iframe {
 
 <h1>🎮 유치원의 하루</h1>
 
-<!-- ⭐ 상단 메뉴 -->
 <div class="top-menu">
     <button class="category-btn active" onclick="showCategory('basic', this)">📚 기본놀이</button>
     <button class="category-btn" onclick="showCategory('creative', this)">🎨 창의놀이</button>
     <button class="category-btn" onclick="showCategory('health', this)">🪥 안전 및 생활</button>
 
-    <!-- ⭐ 전체화면 버튼 -->
     <button class="fullscreen-btn" onclick="toggleFullscreen()">🖥️ 전체화면</button>
 </div>
 
-<!-- 기본 -->
 <div id="basic" class="tab-menu category">
     <button class="tab-btn active" onclick="loadGame('game1/game1_timer.html', this)">🐰 정리 타이머</button>
     <button class="tab-btn" onclick="loadGame('game3/game3_memory.html', this)">❤️ 메모리 카드</button>
@@ -107,21 +117,23 @@ iframe {
     <button class="tab-btn" onclick="loadGame('game8/game8_roulette.html', this)">🎈 룰렛 놀이</button>
 </div>
 
-<!-- 창의 -->
 <div id="creative" class="tab-menu category" style="display:none;">
     <button class="tab-btn" onclick="loadGame('game5/game5_face.html', this)">📷 누구일까요?</button>
     <button class="tab-btn" onclick="loadGame('game6/game6_mix.html', this)">🌈 얼굴 섞기</button>
     <button class="tab-btn" onclick="loadGame('game2/game2_pop.html', this)">🌸 벚꽃을 잡아라!(웹캠필요)</button>
 </div>
 
-<!-- 생활 -->
 <div id="health" class="tab-menu category" style="display:none;">
     <button class="tab-btn" onclick="loadGame('game7/game7_strawberry.html', this)">😋 좋은음식! 나쁜음식!(웹캠필요)</button>
     <button class="tab-btn" onclick="loadGame('game9/game9_rice.html', this)">🍚 오늘은 내가 영양사!</button>
     <button class="tab-btn" onclick="loadGame('game10/game10_teeth.html', this)">🪥 치카치카 양치 대작전(웹캠필요)</button>
 </div>
 
-<!-- 게임 -->
+<div class="info-banner">
+    📢 게임은 <b>전체화면</b>으로 즐겨주세요! <br>
+    본 콘텐츠는 <b>자유로운 수정, 배포 및 공유</b>가 가능합니다.
+</div>
+
 <div class="game-container" id="gameContainer">
     <iframe id="gameFrame" src="game1/game1_timer.html"></iframe>
 </div>
@@ -137,7 +149,11 @@ function showCategory(id, btn){
     // 첫 게임 자동 실행
     const firstBtn = document.getElementById(id).querySelector('.tab-btn');
     if(firstBtn){
-        loadGame(firstBtn.getAttribute('onclick').match(/'(.*?)'/)[1], firstBtn);
+        const onclickAttr = firstBtn.getAttribute('onclick');
+        const match = onclickAttr.match(/'(.*?)'/);
+        if(match) {
+            loadGame(match[1], firstBtn);
+        }
     }
 }
 
