@@ -7,101 +7,104 @@
 <style>
 body { font-family: 'Jua', sans-serif; background:#f5f5f5; text-align:center; margin: 0; padding: 0; }
 
-/* ⭐ 상단 안내창 (한 줄 구성) */
+/* 상단 안내창 레이아웃 */
 .info-banner {
     background-color: #fff4d1;
     border-bottom: 1px solid #ffe082;
-    padding: 8px 10px;
+    padding: 8px 20px;
     font-size: 0.85em;
     color: #856404;
-    white-space: nowrap; /* 줄바꿈 방지 */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.banner-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.banner-btns { display: flex; gap: 8px; flex-shrink: 0; }
+
+/* ⭐ 가이드 팝업창 */
+#guideOverlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 2000;
+}
+
+#guideContent {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 1000px;
+    height: 85vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.canva-container {
+    flex: 1;
+    width: 100%;
+    border-radius: 10px;
     overflow: hidden;
-    text-overflow: ellipsis;
+    margin-bottom: 15px;
+    border: 1px solid #eee;
+}
+
+.canva-container iframe { width: 100%; height: 100%; border: none; }
+
+.close-btn {
+    padding: 12px 30px;
+    background: #ffb347;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    font-family: 'Jua';
+    font-size: 1.2em;
 }
 
 h1 { margin-top:20px; }
 
-/* 상단 메뉴 */
-.top-menu {
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    gap:10px;
-    margin-top:20px;
-    flex-wrap:wrap;
-}
+/* 카테고리 및 탭 메뉴 */
+.top-menu { display:flex; justify-content:center; gap:10px; margin-top:15px; flex-wrap:wrap; }
+.category-btn { padding:12px 20px; border:none; border-radius:15px; background:#ffd966; cursor:pointer; font-family: 'Jua'; }
+.category-btn.active { background:#ffb347; color:white; }
 
-/* 카테고리 */
-.category-btn {
-    padding:12px 20px;
-    border:none;
-    border-radius:15px;
-    background:#ffd966;
-    cursor:pointer;
-}
-.category-btn.active {
-    background:#ffb347;
-    color:white;
-}
-
-/* 전체화면 버튼 */
-.fullscreen-btn {
-    padding:12px 20px;
-    border:none;
-    border-radius:15px;
-    background:#4A90E2;
-    color:white;
-    cursor:pointer;
-}
-
-/* 게임 버튼 */
-.tab-menu {
-    display:flex;
-    justify-content:center;
-    gap:10px;
-    flex-wrap:wrap;
-    margin-top:20px;
-}
-.tab-btn {
-    padding:12px 18px;
-    border:none;
-    border-radius:12px;
-    background:white;
-    cursor:pointer;
-}
-.tab-btn.active {
-    background:#FFB7C5;
-    color:white;
-}
+.tab-menu { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-top:20px; }
+.tab-btn { padding:10px 16px; border:none; border-radius:12px; background:white; cursor:pointer; font-family: 'Jua'; }
+.tab-btn.active { background:#FFB7C5; color:white; }
 
 /* 게임 화면 */
-.game-container {
-    width:95%;
-    height:75vh;
-    margin:20px auto;
-    background:white;
-    border-radius:20px;
-    overflow:hidden;
-}
-iframe {
-    width:100%;
-    height:100%;
-    border:none;
-}
-
-/* 전체화면 대응 */
-.game-container:fullscreen {
-    width:100vw;
-    height:100vh;
-    border-radius:0;
-}
+.game-container { width:95%; height:70vh; margin:20px auto; background:white; border-radius:20px; overflow:hidden; position: relative; }
+iframe { width:100%; height:100%; border:none; }
+.game-container:fullscreen { width:100vw; height:100vh; border-radius:0; }
 </style>
 </head>
 
 <body>
 
 <div class="info-banner">
-    📢 게임은 <b>전체화면</b>으로 즐겨주세요! &nbsp; | &nbsp; 본 콘텐츠는 <b>자유로운 수정, 배포 및 공유</b>가 가능합니다.
+    <div class="banner-text">📢 게임은 <b>전체화면</b> 권장 | 자유로운 수정·배포 가능 | 홈페이지 공사 중에 있습니다. 최대한 빨리 최적화 하도록 하겠습니다.</div>
+
+    <div class="banner-btns">
+        <button onclick="openGuide()" style="padding: 5px 12px; border: 1px solid #4A90E2; background: white; color: #4A90E2; border-radius: 15px; cursor: pointer; font-family: 'Jua';">📖 가이드 보기</button>
+        <button onclick="toggleFullscreen()" style="padding: 5px 12px; border: none; background: #4A90E2; color: white; border-radius: 15px; cursor: pointer; font-family: 'Jua';">🖥️ 전체화면</button>
+    </div>
+</div>
+
+<div id="guideOverlay">
+    <div id="guideContent">
+        <h2 id="guideTitle" style="margin: 0 0 10px 0; color:#ffb347;">📖 선생님을 위한 게임 방법</h2>
+        <div class="canva-container">
+            <iframe id="canvaFrame" src="about:blank" allowfullscreen="allowfullscreen"></iframe>
+        </div>
+        <button class="close-btn" onclick="closeGuide()">확인</button>
+    </div>
 </div>
 
 <h1>🎮 유치원의 하루</h1>
@@ -110,27 +113,25 @@ iframe {
     <button class="category-btn active" onclick="showCategory('basic', this)">📚 기본놀이</button>
     <button class="category-btn" onclick="showCategory('creative', this)">🎨 창의놀이</button>
     <button class="category-btn" onclick="showCategory('health', this)">🪥 안전 및 생활</button>
-
-    <button class="fullscreen-btn" onclick="toggleFullscreen()">🖥️ 전체화면</button>
 </div>
 
 <div id="basic" class="tab-menu category">
-    <button class="tab-btn active" onclick="loadGame('game1/game1_timer.html', this)">🐰 정리 타이머</button>
-    <button class="tab-btn" onclick="loadGame('game3/game3_memory.html', this)">❤️ 메모리 카드</button>
-    <button class="tab-btn" onclick="loadGame('game4/game4_puzzle.html', this)">🧩 퍼즐 놀이</button>
-    <button class="tab-btn" onclick="loadGame('game8/game8_roulette.html', this)">🎈 룰렛 놀이</button>
+    <button class="tab-btn active" onclick="loadGame('game1/game1_timer.html', this, 'https://www.canva.com/design/DAHGPCwsle0/PsfTC2wXLnvjabU5R68uuw/view?embed')">🐰 정리 타이머</button>
+    <button class="tab-btn" onclick="loadGame('game3/game3_memory.html', this, '여기에_메모리카드_캔바주소_넣기')">❤️ 메모리 카드</button>
+    <button class="tab-btn" onclick="loadGame('game4/game4_puzzle.html', this, '여기에_퍼즐놀이_캔바주소_넣기')">🧩 퍼즐 놀이</button>
+    <button class="tab-btn" onclick="loadGame('game8/game8_roulette.html', this, '여기에_룰렛놀이_캔바주소_넣기')">🎈 룰렛 놀이</button>
 </div>
 
 <div id="creative" class="tab-menu category" style="display:none;">
-    <button class="tab-btn" onclick="loadGame('game5/game5_face.html', this)">📷 누구일까요?</button>
-    <button class="tab-btn" onclick="loadGame('game6/game6_mix.html', this)">🌈 얼굴 섞기</button>
-    <button class="tab-btn" onclick="loadGame('game2/game2_pop.html', this)">🌸 벚꽃을 잡아라!(웹캠필요)</button>
+    <button class="tab-btn" onclick="loadGame('game5/game5_face.html', this, '여기에_누구일까요_캔바주소_넣기')">📷 누구일까요?</button>
+    <button class="tab-btn" onclick="loadGame('game6/game6_mix.html', this, '여기에_얼굴섞기_캔바주소_넣기')">🌈 얼굴 섞기</button>
+    <button class="tab-btn" onclick="loadGame('game2/game2_pop.html', this, '여기에_벚꽃잡기_캔바주소_넣기')">🌸 벚꽃을 잡아라!(웹캠필요)</button>
 </div>
 
 <div id="health" class="tab-menu category" style="display:none;">
-    <button class="tab-btn" onclick="loadGame('game7/game7_strawberry.html', this)">😋 좋은음식! 나쁜음식!(웹캠필요)</button>
-    <button class="tab-btn" onclick="loadGame('game9/game9_rice.html', this)">🍚 오늘은 내가 영양사!</button>
-    <button class="tab-btn" onclick="loadGame('game10/game10_teeth.html', this)">🪥 치카치카 양치 대작전(웹캠필요)</button>
+    <button class="tab-btn" onclick="loadGame('game7/game7_strawberry.html', this, '여기에_좋은음식_캔바주소_넣기')">😋 좋은음식! 나쁜음식!(웹캠필요)</button>
+    <button class="tab-btn" onclick="loadGame('game9/game9_rice.html', this, '여기에_영양사_캔바주소_넣기')">🍚 오늘은 내가 영양사!</button>
+    <button class="tab-btn" onclick="loadGame('game10/game10_teeth.html', this, '여기에_양치대작전_캔바주소_넣기')">🪥 양치 대작전(웹캠필요)</button>
 </div>
 
 <div class="game-container" id="gameContainer">
@@ -138,36 +139,48 @@ iframe {
 </div>
 
 <script>
-function showCategory(id, btn){
-    document.querySelectorAll('.category').forEach(c=>c.style.display='none');
-    document.getElementById(id).style.display='flex';
+// 현재 선택된 게임의 가이드 URL을 저장할 변수
+let currentCanvaUrl = 'https://www.canva.com/design/DAHGPCwsle0/PsfTC2wXLnvjabU5R68uuw/view?embed';
 
-    document.querySelectorAll('.category-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-
-    // 첫 게임 자동 실행
-    const firstBtn = document.getElementById(id).querySelector('.tab-btn');
-    if(firstBtn){
-        const onclickAttr = firstBtn.getAttribute('onclick');
-        const match = onclickAttr.match(/'(.*?)'/);
-        if(match) {
-            loadGame(match[1], firstBtn);
-        }
+function openGuide() {
+    if(currentCanvaUrl) {
+        document.getElementById('canvaFrame').src = currentCanvaUrl;
+        document.getElementById('guideOverlay').style.display = 'block';
+    } else {
+        alert("이 게임은 아직 준비된 가이드가 없습니다.");
     }
 }
 
-function loadGame(url, btn){
+function closeGuide() {
+    document.getElementById('guideOverlay').style.display = 'none';
+}
+
+function showCategory(id, btn){
+    document.querySelectorAll('.category').forEach(c=>c.style.display='none');
+    document.getElementById(id).style.display='flex';
+    document.querySelectorAll('.category-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // 카테고리 변경 시 첫 게임을 클릭하지만, 가이드는 띄우지 않음
+    const firstBtn = document.getElementById(id).querySelector('.tab-btn');
+    if(firstBtn) firstBtn.click();
+}
+
+function loadGame(url, btn, canvaUrl){
+    // 게임 화면만 로드 (가이드는 띄우지 않음)
     document.getElementById('gameFrame').src = url;
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
+
+    // ⭐ 중요: 현재 게임에 맞는 가이드 주소만 변수에 저장해둠
+    currentCanvaUrl = canvaUrl;
 }
 
-// 전체화면 기능
 function toggleFullscreen() {
     const container = document.getElementById('gameContainer');
-
     if (!document.fullscreenElement) {
         container.requestFullscreen();
+        closeGuide();
     } else {
         document.exitFullscreen();
     }

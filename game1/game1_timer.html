@@ -258,7 +258,7 @@
         ctx.fillText("🧺 ", basket.x, basket.y + (basket.h/2) + 25);
 
         // 아이템
-        ctx.font = "45px Arial"; 
+        ctx.font = "70px Arial"; 
         treasures.forEach(t => { if (t.state === 'floor') ctx.fillText(t.icon, t.x, t.y); });
 
         // 아이들 이동
@@ -293,7 +293,7 @@
             ctx.strokeStyle = "white"; ctx.lineWidth = 4;
             ctx.beginPath(); ctx.arc(p.x, p.y - jump, 42, 0, Math.PI*2); ctx.stroke();
             if(p.name) { ctx.fillStyle="#1e3a8a"; ctx.font="bold 22px Gaegu"; ctx.fillText(p.name, p.x, p.y + 70 - jump); }
-            if(p.carrying) { ctx.font = "45px Arial"; ctx.fillText(p.carrying.icon, 0, -45); }
+            if(p.carrying) { ctx.font = "70px Arial"; ctx.fillText(p.carrying.icon, 0, -45); }
         });
 
         if (showText) {
