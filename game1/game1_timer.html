@@ -74,7 +74,7 @@
     let treasures = [], players = [], playerPhotos = [], blocks = [];
     let timeLeft = 0, totalTime = 0, timerInterval, gameActive = false, isEditMode = false;
     let lastClickTime = 0; 
-    const basket = { x: 0, y: 0, w: 150, h: 100 }; // 바구니 크기 정의
+    const basket = { x: 0, y: 0, w: 300, h: 200 }; // 바구니 크기 정의
     let audioCtx;
 
     canvas.addEventListener('mousedown', (e) => {
@@ -255,7 +255,7 @@
             ctx.roundRect(basket.x-75, basket.y-50, 150, 100, 15); ctx.fill();
         }
         ctx.fillStyle = '#1e40af'; ctx.font = "bold 24px Gaegu"; ctx.textAlign = "center";
-        ctx.fillText("🧺 정리 바구니", basket.x, basket.y + (basket.h/2) + 25);
+        ctx.fillText("🧺 ", basket.x, basket.y + (basket.h/2) + 25);
 
         // 아이템
         ctx.font = "45px Arial"; 
