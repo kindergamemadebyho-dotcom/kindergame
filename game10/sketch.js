@@ -1,195 +1,323 @@
 let video;
 let handpose;
 let predictions = [];
-let teethImg, brushImg;
+let teethImg, bubbleImg, goldImg;
 let germImgs = [];
 let germs = [];
+let effects = [];
 
-// 게임 상태 및 설정
+let smoothX = 0, smoothY = 0;
 let gameState = "START"; 
-let modelLoaded = false; // AI 모델 로딩 상태 확인
+let modelLoaded = false;
 let score = 0;
 let timer = 0;
-let selectedTime = 30; 
-let difficulty = 7;    
-let ranking = [];
+
+let selectedTime = 60; 
+let difficulty = 6; 
+let bossSpawned = false;
+
+let highScores = [];
+const MAX_RANKINGS = 5;
 
 function preload() {
-  // 파일명 대소문자가 실제 파일과 일치하는지 꼭 확인하세요!
-  teethImg = loadImage('teeth.png');
-  brushImg = loadImage('brush.png');
-  for (let i = 0; i < 3; i++) {
-    germImgs[i] = loadImage(`germ${i+1}.png`);
-  }
+    teethImg = loadImage('teeth.png');
+    bubbleImg = loadImage('bubble.png'); 
+    goldImg = loadImage('gold.png'); 
+    for (let i = 0; i < 3; i++) {
+        germImgs[i] = loadImage(`germ${i+1}.png`);
+    }
 }
 
 function setup() {
-  createCanvas(640, 480);
-  
-  // 웹캠 설정
-  video = createCapture(VIDEO);
-  video.size(640, 480);
-  video.hide();
+    createCanvas(640, 480);
+    
+    // 비디오 설정
+    video = createCapture(VIDEO);
+    video.size(640, 480);
+    video.hide();
 
-  // ml5 handpose 로드 (버전 호환성을 위해 callback 추가)
-  console.log("AI 모델 로딩 중...");
-  handpose = ml5.handpose(video, () => {
-    console.log("모델 로딩 완료!");
-    modelLoaded = true;
-  });
+    // 모델 로딩 (옵션 최적화)
+    const options = { 
+        flipHorizontal: false, 
+        detectionConfidence: 0.6
+    };
+    
+    handpose = ml5.handpose(video, options, () => {
+        modelLoaded = true;
+        console.log("Model Ready");
+    });
 
-  handpose.on("predict", results => {
-    predictions = results;
-  });
-  
-  // 기존 랭킹 불러오기
-  let savedRanking = localStorage.getItem('brushRanking');
-  if (savedRanking) ranking = JSON.parse(savedRanking);
+    handpose.on("predict", results => {
+        predictions = results;
+    });
+
+    loadRankings();
 }
 
 function draw() {
-  if (gameState === "START") {
-    drawStartScreen();
-  } else if (gameState === "PLAY") {
-    drawPlayScreen();
-  } else if (gameState === "END") {
-    drawEndScreen();
-  }
+    background(255);
+    if (gameState === "START") drawStartScreen();
+    else if (gameState === "PLAY") drawPlayScreen();
+    else if (gameState === "END") drawEndScreen();
 }
 
-// --- 화면 그리기 함수 ---
-
 function drawStartScreen() {
-  background(240, 255, 250);
-  textAlign(CENTER, CENTER);
-  
-  // 모델 로딩 중일 때 표시
-  if (!modelLoaded) {
-    fill(100);
-    textSize(20);
-    text("AI 선생님이 준비 중이에요...\n잠시만 기다려 주세요! (약 10초)", width/2, height/2);
-    return; 
-  }
+    bossSpawned = false;
+    background("#E0F7FA"); 
+    textAlign(CENTER, CENTER);
+    noStroke();
+    
+    fill("#FF6F61");
+    textSize(50);
+    text("🪥 치카치카 수호대 🪥", width/2, 90);
+    
+    fill(255, 230);
+    rect(70, 140, 500, 190, 30);
+    
+    fill(50);
+    textSize(18);
+    text("⏱️ 양치 시간 선택", width/2, 165);
+    drawCuteBtn(width/2 - 100, 200, "1분", 60, selectedTime);
+    drawCuteBtn(width/2, 200, "2분", 120, selectedTime);
+    drawCuteBtn(width/2 + 100, 200, "3분", 180, selectedTime);
 
-  fill(50);
-  textSize(40);
-  text("✨ 치카치카 수호대 ✨", width/2, 80);
-  
-  textSize(18);
-  text("시간 선택", width/2, 160);
-  drawButton(width/2 - 80, 180, 70, 40, "30초", () => selectedTime = 30, selectedTime === 30);
-  drawButton(width/2 + 10, 180, 70, 40, "60초", () => selectedTime = 60, selectedTime === 60);
+    text("😈 세균 마리 수", width/2, 255);
+    drawCuteBtn(width/2 - 90, 290, "조금", 3, difficulty);
+    drawCuteBtn(width/2, 290, "보통", 6, difficulty);
+    drawCuteBtn(width/2 + 90, 290, "많이", 10, difficulty);
 
-  text("난이도 (세균 수)", width/2, 260);
-  drawButton(width/2 - 110, 280, 60, 40, "쉬움", () => difficulty = 4, difficulty === 4);
-  drawButton(width/2 - 30, 280, 60, 40, "보통", () => difficulty = 7, difficulty === 7);
-  drawButton(width/2 + 50, 280, 60, 40, "어려움", () => difficulty = 11, difficulty === 11);
+    if (modelLoaded) {
+        fill("#4CAF50");
+        rectMode(CENTER);
+        rect(width/2, 395, 240, 70, 35);
+        fill(255);
+        textSize(32);
+        text("🪥 게임 시작!", width/2, 395);
+        rectMode(CORNER);
+    } else {
+        fill(180);
+        rectMode(CENTER);
+        rect(width/2, 395, 240, 70, 35);
+        fill(255);
+        textSize(18);
+        text("준비 중... (잠시만 기다려요)", width/2, 395);
+        rectMode(CORNER);
+    }
+}
 
-  drawButton(width/2 - 100, 380, 200, 60, "게임 시작!", startGame, false, "#FFB6C1");
+function drawCuteBtn(x, y, label, val, current) {
+    push();
+    rectMode(CENTER);
+    let isSelected = (val === current);
+    fill(isSelected ? "#FF4081" : "#FCE4EC");
+    stroke(isSelected ? 255 : "#F8BBD0");
+    strokeWeight(isSelected ? 3 : 2);
+    rect(x, y, 90, 40, 15);
+    fill(isSelected ? 255 : "#880E4F");
+    noStroke();
+    textSize(16);
+    text(label, x, y);
+    pop();
 }
 
 function drawPlayScreen() {
-  push();
-  translate(width, 0);
-  scale(-1, 1);
-  image(video, 0, 0, width, height);
-  pop();
+    // 1. 비디오 출력
+    push();
+    translate(width, 0);
+    scale(-1, 1);
+    image(video, 0, 0, width, height);
+    pop();
 
-  image(teethImg, 0, 0, width, height);
+    // 2. 배경 출력
+    imageMode(CORNERS);
+    if (teethImg) image(teethImg, 0, 0, width, height);
+    imageMode(CORNER);
 
-  let timeLeft = selectedTime - floor((millis() - timer) / 1000);
-  if (timeLeft <= 0) endGame();
-
-  for (let i = germs.length - 1; i >= 0; i--) {
-    let g = germs[i];
-    image(germImgs[g.type], g.x, g.y, 70, 70);
-
-    if (predictions.length > 0) {
-      let hand = predictions[0];
-      let tx = map(hand.landmarks[8][0], 0, 640, width, 0);
-      let ty = hand.landmarks[8][1];
-      
-      image(brushImg, tx - 60, ty - 60, 120, 120);
-
-      if (dist(tx, ty, g.x + 35, g.y + 35) < 60) {
-        germs.splice(i, 1);
-        score += 10;
-        spawnGerm();
-      }
+    let timeLeft = selectedTime - floor((millis() - timer) / 1000);
+    if (!bossSpawned && timeLeft <= selectedTime / 5 && timeLeft > 0) {
+        spawnBossGerm();
+        bossSpawned = true;
     }
-  }
-  drawUI(timeLeft);
-}
+    if (timeLeft <= 0) { gameOver(); return; }
 
-function drawEndScreen() {
-  background(255, 240, 245);
-  textAlign(CENTER, CENTER);
-  fill(255, 100, 100);
-  textSize(50);
-  text("게임 종료!", width/2, 80);
-  
-  fill(50);
-  textSize(25);
-  text(`이번 점수: ${score}점`, width/2, 140);
-
-  text("🏆 명예의 전당 🏆", width/2, 200);
-  for(let i=0; i < min(ranking.length, 3); i++) {
-    text(`${i+1}위: ${ranking[i]}점`, width/2, 240 + (i*35));
-  }
-
-  drawButton(width/2 - 100, 380, 200, 60, "다시 도전!", () => gameState = "START", false, "#AED9E0");
-}
-
-// --- 보조 기능 ---
-
-function drawButton(x, y, w, h, label, action, isSelected, bgColor = "#FFFFFF") {
-  if (mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
-    fill(220);
-    if (mouseIsPressed) {
-      action();
-      mouseIsPressed = false; 
+    // 3. 손가락 추적
+    if (predictions && predictions.length > 0) {
+        let hand = predictions[0];
+        let indexFinger = hand.landmarks[8];
+        let targetX = map(indexFinger[0], 0, 640, width, 0);
+        let targetY = map(indexFinger[1], 0, 480, 0, height);
+        
+        smoothX = lerp(smoothX, targetX, 0.4);
+        smoothY = lerp(smoothY, targetY, 0.4);
+        drawBrush(smoothX, smoothY);
     }
-  } else {
-    fill(isSelected ? "#FFD700" : bgColor);
-  }
-  stroke(100);
-  rect(x, y, w, h, 10);
-  fill(0);
-  noStroke();
-  textSize(16);
-  text(label, x + w/2, y + h/2);
+
+    handleGerms();
+    renderEffects();
+    drawCuteUI(timeLeft);
+    drawReturnButton(); 
 }
 
-function startGame() {
-  score = 0;
-  germs = [];
-  for (let i = 0; i < difficulty; i++) spawnGerm();
-  timer = millis();
-  gameState = "PLAY";
-}
+function handleGerms() {
+    for (let i = germs.length - 1; i >= 0; i--) {
+        let g = germs[i];
+        let size = g.isBoss ? 150 : 80;
+        let shake = (g.isBoss && g.isHitting) ? sin(frameCount * 0.8) * (PI / 20) : 0;
 
-function endGame() {
-  ranking.push(score);
-  ranking.sort((a, b) => b - a);
-  ranking = ranking.slice(0, 5); // 상위 5개만 저장
-  localStorage.setItem('brushRanking', JSON.stringify(ranking));
-  gameState = "END";
+        push();
+        imageMode(CENTER);
+        translate(g.x + size/2, g.y + size/2);
+        rotate(shake);
+        let img = g.isBoss ? goldImg : germImgs[g.type];
+        if (img) image(img, 0, 0, size, size);
+        pop();
+        
+        g.isHitting = false;
+
+        // 체력바
+        fill(255, 200); 
+        noStroke();
+        rect(g.x + size*0.1, g.y - 15, size*0.8, 8, 4);
+        fill(g.isBoss ? "#FFD700" : "#FF5252");
+        rect(g.x + size*0.1, g.y - 15, size*0.8 * (g.hp / g.maxHp), 8, 4);
+
+        if (dist(smoothX, smoothY, g.x + size/2, g.y + size/2) < size/2 + 35) {
+            g.isHitting = true;
+            if (frameCount % 6 === 0) {
+                g.hp--;
+                effects.push({ x: g.x + size/2, y: g.y + size/2, type: "bubble", life: 10 });
+            }
+            if (g.hp <= 0) {
+                let addScore = g.isBoss ? 10 : 1;
+                score += addScore;
+                effects.push({ x: g.x + size/2, y: g.y - 20, type: "text", val: "+" + addScore, life: 30, col: g.isBoss ? "#FFD700" : "#FF5252" });
+                germs.splice(i, 1);
+                if (!g.isBoss) spawnGerm();
+            }
+        }
+    }
 }
 
 function spawnGerm() {
-  let x = random(100, width - 150);
-  // 이빨 위치(위/아래)에 맞춰 생성
-  let y = random() > 0.5 ? random(60, 130) : random(330, 400);
-  germs.push({ x: x, y: y, type: floor(random(3)) });
+    let isUpper = random(1) > 0.5;
+    let targetY = isUpper ? random(30, 90) : random(360, 420);
+    let targetX = random(80, width - 160);
+    germs.push({ x: targetX, y: targetY, type: floor(random(3)), hp: 3, maxHp: 3, isBoss: false, isHitting: false });
 }
 
-function drawUI(timeLeft) {
-  fill(255, 255, 255, 220);
-  noStroke();
-  rect(20, 20, 160, 70, 15);
-  fill(0);
-  textAlign(LEFT, TOP);
-  textSize(18);
-  text(`⏱ 시간: ${timeLeft}초`, 35, 35);
-  text(`⭐ 점수: ${score}`, 35, 60);
+function spawnBossGerm() {
+    germs.push({ x: width/2 - 75, y: height/2 - 75, hp: 15, maxHp: 15, isBoss: true, isHitting: false });
+}
+
+function drawReturnButton() {
+    push();
+    fill("#EF5350"); // 투명도 인자 오류 가능성 제거
+    noStroke();
+    rect(width - 100, 20, 80, 40, 15);
+    fill(255);
+    textAlign(CENTER, CENTER);
+    textSize(14);
+    text("🏠 홈으로", width - 60, 40);
+    pop();
+}
+
+function drawCuteUI(t) {
+    push();
+    fill(255, 230); 
+    rect(15, 15, 175, 95, 20);
+    fill(50); 
+    textAlign(LEFT, CENTER);
+    let m = floor(t / 60); 
+    let s = t % 60;
+    textSize(18); text("⏱️ 시간", 30, 45);
+    textSize(24); fill("#FF4081"); text(`${m}:${nf(s, 2)}`, 110, 45);
+    fill(50); textSize(18); text("🦠 점수", 30, 75);
+    textSize(24); fill("#4CAF50"); text(`${score}`, 110, 75);
+    pop();
+}
+
+function renderEffects() {
+    for (let i = effects.length - 1; i >= 0; i--) {
+        let e = effects[i];
+        if (e.type === "bubble") {
+            imageMode(CENTER); 
+            if(bubbleImg) image(bubbleImg, e.x, e.y, 60, 60); 
+            imageMode(CORNER);
+        } else if (e.type === "text") {
+            textAlign(CENTER); 
+            textSize(20 + (30 - e.life)/2); 
+            fill(e.col);
+            noStroke();
+            text(e.val, e.x, e.y - (30 - e.life));
+        }
+        e.life--; 
+        if (e.life <= 0) effects.splice(i, 1);
+    }
+}
+
+function mousePressed() {
+    if (gameState === "START") {
+        if (mouseY > 175 && mouseY < 230) {
+            if (dist(mouseX, mouseY, width/2 - 100, 200) < 40) selectedTime = 60;
+            if (dist(mouseX, mouseY, width/2, 200) < 40) selectedTime = 120;
+            if (dist(mouseX, mouseY, width/2 + 100, 200) < 40) selectedTime = 180;
+        }
+        if (mouseY > 265 && mouseY < 320) {
+            if (dist(mouseX, mouseY, width/2 - 90, 290) < 35) difficulty = 3;
+            if (dist(mouseX, mouseY, width/2, 290) < 35) difficulty = 6;
+            if (dist(mouseX, mouseY, width/2 + 90, 290) < 35) difficulty = 10;
+        }
+        if (modelLoaded && dist(mouseX, mouseY, width/2, 395) < 120) {
+            startGame();
+        }
+    } else if (gameState === "PLAY") {
+        if (mouseX > width - 100 && mouseX < width - 20 && mouseY > 20 && mouseY < 60) {
+            gameState = "START";
+        }
+    } else if (gameState === "END") {
+        if (dist(mouseX, mouseY, width/2, 410) < 100) gameState = "START";
+    }
+}
+
+function startGame() {
+    score = 0;
+    germs = [];
+    bossSpawned = false;
+    for(let i=0; i<difficulty; i++) spawnGerm();
+    timer = millis();
+    gameState = "PLAY";
+}
+
+function loadRankings() {
+    let saved = localStorage.getItem('teethRanking');
+    highScores = saved ? JSON.parse(saved) : [];
+}
+
+function gameOver() {
+    gameState = "END";
+    highScores.push(score);
+    highScores.sort((a, b) => b - a);
+    highScores = highScores.slice(0, MAX_RANKINGS);
+    localStorage.setItem('teethRanking', JSON.stringify(highScores));
+}
+
+function drawEndScreen() {
+    background("#E8F5E9"); textAlign(CENTER, CENTER);
+    fill("#2E7D32"); textSize(45); text("🦷 양치 성공! 🦷", width/2, 80);
+    fill("#333"); textSize(28); text(`잡은 세균: ${score} 마리`, width/2, 140);
+    fill(255, 230); rect(width/2 - 180, 180, 360, 180, 25);
+    fill("#555"); textSize(22); text("🏆 최고 기록 🏆", width/2, 205);
+    textSize(16); textAlign(LEFT);
+    for (let i = 0; i < MAX_RANKINGS; i++) {
+        let y = 235 + i * 22;
+        text(`${i + 1}등: ${highScores[i] || 0} 마리`, width/2 - 80, y);
+    }
+    textAlign(CENTER); fill("#FF6F61"); rectMode(CENTER);
+    rect(width/2, 410, 200, 60, 30); fill(255); textSize(24); text("다시 하기", width/2, 410); rectMode(CORNER);
+}
+
+function drawBrush(x, y) {
+    push(); rectMode(CENTER); fill(255); stroke(150); strokeWeight(2);
+    rect(x, y, 90, 40, 12); for (let i = -35; i <= 35; i += 12) line(x + i, y - 15, x + i, y + 15);
+    fill("#81D4FA"); noStroke(); rect(x, y + 40, 20, 50, 7); pop();
 }
