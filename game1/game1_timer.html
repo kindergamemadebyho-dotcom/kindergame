@@ -64,46 +64,36 @@
     const itemIcons = ['🧸', '🚗', '🎨', '🧩', '⚽', '🎺', '🚂', '🚁', '🧁', '📖', '🖍️', '🧱', '👟', '🧹'];
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
+    
+    // 이미지 객체 생성
     const bgImage = new Image();
     bgImage.src = 'image_0.png'; 
+    const basketImage = new Image();
+    basketImage.src = 'basket.png'; // 바구니 이미지 추가
 
     let treasures = [], players = [], playerPhotos = [], blocks = [];
     let timeLeft = 0, totalTime = 0, timerInterval, gameActive = false, isEditMode = false;
-    let lastClickTime = 0; // 더블 클릭 판정용
-    const basket = { x: 0, y: 0 };
+    let lastClickTime = 0; 
+    const basket = { x: 0, y: 0, w: 150, h: 100 }; // 바구니 크기 정의
     let audioCtx;
 
-    // --- [추가] 마우스 클릭 이벤트 (교실 편집 로직) ---
     canvas.addEventListener('mousedown', (e) => {
         if (!isEditMode) return;
-
         const rect = canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         const currentTime = Date.now();
-
-        // 클릭한 위치에 장애물이 있는지 확인
-        const targetIndex = blocks.findIndex(b => 
-            x > b.x && x < b.x + b.w && y > b.y && y < b.y + b.h
-        );
-
-        // 더블 클릭 판정 (0.3초 이내 재클릭 시 삭제)
+        const targetIndex = blocks.findIndex(b => x > b.x && x < b.x + b.w && y > b.y && y < b.y + b.h);
         if (currentTime - lastClickTime < 300) {
-            if (targetIndex > -1) {
-                blocks.splice(targetIndex, 1);
-            }
+            if (targetIndex > -1) blocks.splice(targetIndex, 1);
             lastClickTime = 0;
             return;
         }
         lastClickTime = currentTime;
-
-        // 회전 또는 생성
         if (targetIndex > -1) {
-            // 30도(Math.PI / 6)씩 회전
             blocks[targetIndex].rotation = (blocks[targetIndex].rotation || 0) + (Math.PI / 6);
         } else {
-            // 새 장애물 생성
-            blocks.push({ x: x - 40, y: y - 30, w: 100, h: 60, rotation: 0 });
+            blocks.push({ x: x - 50, y: y - 30, w: 100, h: 60, rotation: 0 });
         }
     });
 
@@ -252,16 +242,20 @@
             ctx.roundRect(-b.w / 2, -b.h / 2, b.w, b.h, 10);
             ctx.fill();
             ctx.stroke();
-            ctx.fillStyle = 'rgba(255,255,255,0.1)';
-            ctx.fillRect(-b.w / 2 + 10, -b.h / 2 + 10, b.w - 20, 5);
             ctx.restore();
         });
 
-        // 바구니
-        ctx.fillStyle = 'rgba(59, 130, 246, 0.7)'; ctx.beginPath();
-        ctx.roundRect(basket.x-70, basket.y-40, 140, 80, 15); ctx.fill();
-        ctx.fillStyle = 'white'; ctx.font = "bold 24px Gaegu"; ctx.textAlign = "center";
-        ctx.fillText("🧺 정리 바구니", basket.x, basket.y + 10);
+        // --- 바구니 그리기 (이미지 적용) ---
+        if (basketImage.complete) {
+            // 이미지가 있으면 이미지로 그림
+            ctx.drawImage(basketImage, basket.x - basket.w/2, basket.y - basket.h/2, basket.w, basket.h);
+        } else {
+            // 이미지가 로딩 전이거나 없으면 기존 박스로 대체
+            ctx.fillStyle = 'rgba(59, 130, 246, 0.7)'; ctx.beginPath();
+            ctx.roundRect(basket.x-75, basket.y-50, 150, 100, 15); ctx.fill();
+        }
+        ctx.fillStyle = '#1e40af'; ctx.font = "bold 24px Gaegu"; ctx.textAlign = "center";
+        ctx.fillText("🧺 정리 바구니", basket.x, basket.y + (basket.h/2) + 25);
 
         // 아이템
         ctx.font = "45px Arial"; 
@@ -281,7 +275,6 @@
             if (d > 10) {
                 let nextX = p.x + (dx/d) * p.speed;
                 let nextY = p.y + (dy/d) * p.speed;
-                // 장애물 충돌 회피 (간단 버전)
                 let collision = blocks.some(b => nextX > b.x - 20 && nextX < b.x + b.w + 20 && nextY > b.y - 20 && nextY < b.y + b.h + 20);
                 if (!collision) { p.x = nextX; p.y = nextY; } 
                 else { p.x += (dy/d) * p.speed; p.y -= (dx/d) * p.speed; }
