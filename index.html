@@ -1,182 +1,163 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <title>유치원의 하루</title>
-    <style>
-        body { font-family: 'Jua', sans-serif; background: #f0f0f0; text-align: center; margin: 0; padding: 0; }
-        h1 { margin-top: 20px; color: #333; }
-        
-        .banner-container {
-            background-color: #333; color: white; padding: 12px 20px;
-            position: relative; width: 100%; z-index: 9999;
-            display: flex; justify-content: center; align-items: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2); font-size: 0.95rem; box-sizing: border-box;
-        }
-        .close-btn { background: none; border: none; color: #aaa; font-size: 24px; cursor: pointer; position: absolute; right: 20px; }
+<meta charset="UTF-8">
+<title>유치원의 하루</title>
 
-        .tab-menu { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 20px; flex-wrap: wrap; padding: 0 10px; }
-        .tab-btn { padding: 12px 25px; font-size: 1.1rem; cursor: pointer; border: none; border-radius: 10px; background: white; transition: 0.3s; box-shadow: 0 4px 0 #ddd; }
-        .tab-btn.active { background: #FFB7C5; color: white; box-shadow: 0 4px 0 #FF8E9E; }
-        
-        .fullscreen-btn { padding: 12px 20px; font-size: 1.1rem; cursor: pointer; border: none; border-radius: 10px; background: #4A90E2; color: white; transition: 0.3s; box-shadow: 0 4px 0 #357ABD; margin-left: 20px; }
+<style>
+body { font-family: 'Jua', sans-serif; background:#f5f5f5; text-align:center; }
+h1 { margin-top:20px; }
 
-        /* ⭐ 전체화면 대응 및 스크롤 차단 CSS */
-        .game-container { 
-            width: 95%; 
-            max-width: 1200px; 
-            height: 75vh; 
-            margin: 20px auto; 
-            background: #fff; 
-            border-radius: 20px; 
-            overflow: hidden; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            position: relative;
-        }
+/* 상단 메뉴 */
+.top-menu {
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:10px;
+    margin-top:20px;
+    flex-wrap:wrap;
+}
 
-        #gameFrame { 
-            width: 100% !important; 
-            height: 100% !important; 
-            border: none; 
-            display: block;
-        }
+/* 카테고리 */
+.category-btn {
+    padding:12px 20px;
+    border:none;
+    border-radius:15px;
+    background:#ffd966;
+    cursor:pointer;
+}
+.category-btn.active {
+    background:#ffb347;
+    color:white;
+}
 
-        /* 전체화면 모드일 때: 스크롤을 완전히 숨기고 꽉 채움 */
-        .game-container:fullscreen {
-            width: 100vw !important;
-            height: 100vh !important;
-            max-width: none !important;
-            margin: 0 !important;
-            border-radius: 0 !important;
-            overflow: hidden; /* 스크롤바 숨기기 */
-        }
-        .game-container:-webkit-full-screen {
-            width: 100vw !important; height: 100vh !important;
-            max-width: none !important; margin: 0 !important; border-radius: 0 !important;
-            overflow: hidden;
-        }
+/* 전체화면 버튼 */
+.fullscreen-btn {
+    padding:12px 20px;
+    border:none;
+    border-radius:15px;
+    background:#4A90E2;
+    color:white;
+    cursor:pointer;
+}
 
-        .visitor-counter { margin: 50px 0; padding-bottom: 40px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-        .visitor-label { font-size: 0.85rem; color: #888; font-weight: bold; letter-spacing: 1px; }
-    </style>
+/* 게임 버튼 */
+.tab-menu {
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:20px;
+}
+.tab-btn {
+    padding:12px 18px;
+    border:none;
+    border-radius:12px;
+    background:white;
+    cursor:pointer;
+}
+.tab-btn.active {
+    background:#FFB7C5;
+    color:white;
+}
+
+/* 게임 화면 */
+.game-container {
+    width:95%;
+    height:75vh;
+    margin:20px auto;
+    background:white;
+    border-radius:20px;
+    overflow:hidden;
+}
+iframe {
+    width:100%;
+    height:100%;
+    border:none;
+}
+
+/* 전체화면 대응 */
+.game-container:fullscreen {
+    width:100vw;
+    height:100vh;
+    border-radius:0;
+}
+</style>
 </head>
+
 <body>
 
-<div id="notice-banner" class="banner-container">
-    <span>🎮 <strong>안내:</strong> 게임은 전체 화면으로 즐겨 주세요!, 🎞️<strong>안내:</strong> 화면 비율은 100%로 즐겨 주세요!,  ❤️배포 및 수정,공유는 자유입니다. 출처 하나만 남겨 주세요!)</span> 
-    <button class="close-btn" onclick="document.getElementById('notice-banner').style.display='none'">&times;</button>
+<h1>🎮 유치원의 하루</h1>
+
+<!-- ⭐ 상단 메뉴 -->
+<div class="top-menu">
+    <button class="category-btn active" onclick="showCategory('basic', this)">📚 기본놀이</button>
+    <button class="category-btn" onclick="showCategory('creative', this)">🎨 창의놀이</button>
+    <button class="category-btn" onclick="showCategory('health', this)">🪥 안전 및 생활</button>
+
+    <!-- ⭐ 전체화면 버튼 -->
+    <button class="fullscreen-btn" onclick="toggleFullscreen()">🖥️ 전체화면</button>
 </div>
 
-    <h1>🎮 유치원의 하루-by.Ho</h1>
-    
-    <div class="tab-menu">
-        <button class="tab-btn active" onclick="loadGame('game1/game1_timer.html', this)">🐰 정리 타이머</button>
-        <button class="tab-btn" onclick="loadGame('game2/game2_pop.html', this)">🌸 벚꽃 팝콘(웹캠필요)</button>
-        <button class="tab-btn" onclick="loadGame('game3/game3_memory.html', this)">❤️ 메모리 카드</button>
-        <button class="tab-btn" onclick="loadGame('game4/game4_puzzle.html', this)">🧩 퍼즐 놀이</button>
-        <button class="tab-btn" onclick="loadGame('game5/game5_face.html', this)">📷 얼굴 맞추기</button>
-        <button class="tab-btn" onclick="loadGame('game6/game6_mix.html', this)">🌈 얼굴 섞기</button>
-        <button class="tab-btn" onclick="loadGame('game7/game7_strawberry.html', this)">😋 좋은 음식! 나쁜 음식!(웹캠필요)</button>
-        <button class="tab-btn" onclick="loadGame('game8/game8_roulette.html', this)">🎈 팡팡 룰렛</button>
-        <button class="tab-btn" onclick="loadGame('game9/game9_rice.html', this)">🍚 영양사 놀이</button>
-        <button class="tab-btn" onclick="loadGame('game10/game10_teeth.html', this)">🪥 치카치카 양치해요</button>
-        <button class="fullscreen-btn" onclick="toggleFullscreen()">🖥️ 전체화면</button>
-    </div>
+<!-- 기본 -->
+<div id="basic" class="tab-menu category">
+    <button class="tab-btn active" onclick="loadGame('game1/game1_timer.html', this)">🐰 정리 타이머</button>
+    <button class="tab-btn" onclick="loadGame('game3/game3_memory.html', this)">❤️ 메모리 카드</button>
+    <button class="tab-btn" onclick="loadGame('game4/game4_puzzle.html', this)">🧩 퍼즐 놀이</button>
+    <button class="tab-btn" onclick="loadGame('game8/game8_roulette.html', this)">🎈 룰렛 놀이</button>
+</div>
 
-    <div id="gameContainer" class="game-container">
-        <iframe id="gameFrame" src="game1/game1_timer.html" allowfullscreen></iframe>
-    </div>
+<!-- 창의 -->
+<div id="creative" class="tab-menu category" style="display:none;">
+    <button class="tab-btn" onclick="loadGame('game5/game5_face.html', this)">📷 누구일까요?</button>
+    <button class="tab-btn" onclick="loadGame('game6/game6_mix.html', this)">🌈 얼굴 섞기</button>
+    <button class="tab-btn" onclick="loadGame('game2/game2_pop.html', this)">🌸 벚꽃을 잡아라!(웹캠필요)</button>
+</div>
 
-    <div class="visitor-counter">
-        <span class="visitor-label">TOTAL VISITORS</span>
-        <span>👥 전체 방문자: <b id="totalCount">0</b></span>
-        <span>📅 오늘 방문자: <b id="todayCount">0</b></span>
-    </div>
+<!-- 생활 -->
+<div id="health" class="tab-menu category" style="display:none;">
+    <button class="tab-btn" onclick="loadGame('game7/game7_strawberry.html', this)">😋 좋은음식! 나쁜음식!(웹캠필요)</button>
+    <button class="tab-btn" onclick="loadGame('game9/game9_rice.html', this)">🍚 오늘은 내가 영양사!</button>
+    <button class="tab-btn" onclick="loadGame('game10/game10_teeth.html', this)">🪥 치카치카 양치 대작전(웹캠필요)</button>
+</div>
 
-    <script>
-        function loadGame(url, btn) {
-            document.getElementById('gameFrame').src = url;
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-        }
+<!-- 게임 -->
+<div class="game-container" id="gameContainer">
+    <iframe id="gameFrame" src="game1/game1_timer.html"></iframe>
+</div>
 
-        function toggleFullscreen() {
-            const container = document.getElementById('gameContainer');
-            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-                if (container.requestFullscreen) { container.requestFullscreen(); }
-                else if (container.webkitRequestFullscreen) { container.webkitRequestFullscreen(); }
-            } else {
-                if (document.exitFullscreen) { document.exitFullscreen(); }
-                else if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); }
-            }
-        }
-    </script>
+<script>
+function showCategory(id, btn){
+    document.querySelectorAll('.category').forEach(c=>c.style.display='none');
+    document.getElementById(id).style.display='flex';
 
-<script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    document.querySelectorAll('.category-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
 
-        // 1. Firebase 설정 (재호님의 프로젝트 정보입니다)
-        const firebaseConfig = {
-            apiKey: "AIzaSyAReVfS5fsNSr5WeWggSUoBe7MRpTZympM",
-            authDomain: "kinder-ho.firebaseapp.com",
-            projectId: "kinder-ho",
-            storageBucket: "kinder-ho.firebasestorage.app",
-            messagingSenderId: "222827051474",
-            appId: "1:222827051474:web:1265a8b4a157cdbacfb00b",
-            measurementId: "G-DCECSYRZVQ"
-        };
+    // 첫 게임 자동 실행
+    const firstBtn = document.getElementById(id).querySelector('.tab-btn');
+    if(firstBtn){
+        loadGame(firstBtn.getAttribute('onclick').match(/'(.*?)'/)[1], firstBtn);
+    }
+}
 
-        // 2. Firebase 초기화
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD 형식
+function loadGame(url, btn){
+    document.getElementById('gameFrame').src = url;
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+}
 
-        // 3. 방문자 고유 ID 생성 (이미 있다면 기존 것 사용)
-        let visitorId = localStorage.getItem("visitorId");
-        if (!visitorId) {
-            visitorId = crypto.randomUUID();
-            localStorage.setItem("visitorId", visitorId);
-        }
+// ⭐ 전체화면 기능
+function toggleFullscreen() {
+    const container = document.getElementById('gameContainer');
 
-        const visitRef = doc(db, "visitors", visitorId);
-        const statsRef = doc(db, "stats", "main");
+    if (!document.fullscreenElement) {
+        container.requestFullscreen();
+    } else {
+        document.exitFullscreen();
+    }
+}
+</script>
 
-        async function updateVisitor() {
-            try {
-                // 현재 데이터 가져오기
-                const visitSnap = await getDoc(visitRef);
-                const statsSnap = await getDoc(statsRef);
-                
-                // 장부가 없으면 초기 구조 생성
-                let statsData = statsSnap.exists() ? statsSnap.data() : { total: 0, daily: {} };
-                if (!statsData.daily) statsData.daily = {};
-
-                // 오늘 처음 방문했는지 확인
-                if (!visitSnap.exists() || visitSnap.data().lastVisit !== today) {
-                    // 개인 방문 기록 업데이트
-                    await setDoc(visitRef, { lastVisit: today }, { merge: true });
-
-                    // 전체 숫자 및 오늘 숫자 1씩 증가
-                    statsData.total = (statsData.total || 0) + 1;
-                    statsData.daily[today] = (statsData.daily[today] || 0) + 1;
-
-                    // 서버 장부(Firestore)에 저장
-                    await setDoc(statsRef, statsData, { merge: true });
-                }
-
-                // 화면에 숫자 표시 (데이터를 다 처리한 후 출력)
-                document.getElementById("totalCount").innerText = statsData.total;
-                document.getElementById("todayCount").innerText = statsData.daily[today] || 0;
-
-            } catch (e) {
-                console.error("방문자 카운팅 중 에러 발생:", e);
-                // 에러 발생 시 0으로 표시되지 않도록 기본값 유지
-            }
-        }
-
-        // 함수 실행
-        updateVisitor();
-    </script>
 </body>
 </html>
