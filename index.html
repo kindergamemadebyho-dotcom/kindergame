@@ -5,7 +5,20 @@
 <title>유치원의 하루</title>
 
 <style>
-body { font-family: 'Jua', sans-serif; background:#f5f5f5; text-align:center; }
+body { font-family: 'Jua', sans-serif; background:#f5f5f5; text-align:center; margin: 0; padding: 0; }
+
+/* ⭐ 상단 안내창 (한 줄 구성) */
+.info-banner {
+    background-color: #fff4d1;
+    border-bottom: 1px solid #ffe082;
+    padding: 8px 10px;
+    font-size: 0.85em;
+    color: #856404;
+    white-space: nowrap; /* 줄바꿈 방지 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 h1 { margin-top:20px; }
 
 /* 상단 메뉴 */
@@ -61,24 +74,11 @@ h1 { margin-top:20px; }
     color:white;
 }
 
-/* ⭐ 새로 추가된 안내창 스타일 */
-.info-banner {
-    background-color: #fff4d1;
-    border: 1px solid #ffe082;
-    padding: 10px;
-    margin: 20px auto 0;
-    width: 90%;
-    border-radius: 10px;
-    font-size: 0.9em;
-    color: #856404;
-    line-height: 1.5;
-}
-
 /* 게임 화면 */
 .game-container {
     width:95%;
     height:75vh;
-    margin:10px auto 20px; /* 안내창과의 간격 조정 */
+    margin:20px auto;
     background:white;
     border-radius:20px;
     overflow:hidden;
@@ -99,6 +99,10 @@ iframe {
 </head>
 
 <body>
+
+<div class="info-banner">
+    📢 게임은 <b>전체화면</b>으로 즐겨주세요! &nbsp; | &nbsp; 본 콘텐츠는 <b>자유로운 수정, 배포 및 공유</b>가 가능합니다.
+</div>
 
 <h1>🎮 유치원의 하루</h1>
 
@@ -127,11 +131,6 @@ iframe {
     <button class="tab-btn" onclick="loadGame('game7/game7_strawberry.html', this)">😋 좋은음식! 나쁜음식!(웹캠필요)</button>
     <button class="tab-btn" onclick="loadGame('game9/game9_rice.html', this)">🍚 오늘은 내가 영양사!</button>
     <button class="tab-btn" onclick="loadGame('game10/game10_teeth.html', this)">🪥 치카치카 양치 대작전(웹캠필요)</button>
-</div>
-
-<div class="info-banner">
-    📢 게임은 <b>전체화면</b>으로 즐겨주세요! <br>
-    본 콘텐츠는 <b>자유로운 수정, 배포 및 공유</b>가 가능합니다.
 </div>
 
 <div class="game-container" id="gameContainer">
@@ -163,7 +162,7 @@ function loadGame(url, btn){
     btn.classList.add('active');
 }
 
-// ⭐ 전체화면 기능
+// 전체화면 기능
 function toggleFullscreen() {
     const container = document.getElementById('gameContainer');
 
