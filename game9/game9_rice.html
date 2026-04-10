@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>진영유치원 영양사 선생님 게임</title>
+    <title>오늘은 내가 영양사!</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
 
@@ -12,7 +12,7 @@
             height: 100vh; overflow: hidden; 
         }
 
-        /* --- 설정 화면 (업로드) 디자인 --- */
+        /* --- 설정 화면 --- */
         #setup-screen { 
             position: absolute; width: 100%; height: 100%; 
             background: linear-gradient(rgba(255, 249, 230, 0.8), rgba(255, 249, 230, 0.8)), url('kitchen_bg.jpg');
@@ -25,119 +25,91 @@
             position: relative; width: 900px;
         }
         .setup-card h1 { color: #ff8000; font-size: 2.8em; margin-bottom: 5px; }
-        .setup-card p { color: #666; font-size: 1.2em; margin-bottom: 20px; }
-
-        /* 영양소별 업로드 그리드 */
-        .upload-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
-            margin-bottom: 25px;
-        }
-        .upload-box {
-            background: #fff5e6;
-            border: 3px dashed #ffb366;
-            border-radius: 20px;
-            padding: 15px 5px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            transition: 0.3s;
-        }
-        .upload-box:hover { background: #ffe6cc; }
-        .upload-box label { 
-            font-size: 1.1em; color: #e67e22; margin-bottom: 10px; cursor: pointer;
-            display: block; width: 100%;
-        }
+        
+        .upload-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 25px; }
+        .upload-box { background: #fff5e6; border: 3px dashed #ffb366; border-radius: 20px; padding: 15px 5px; display: flex; flex-direction: column; align-items: center; }
+        .upload-box label { font-size: 1.1em; color: #e67e22; margin-bottom: 10px; cursor: pointer; }
         .upload-box input { width: 80%; font-size: 0.8em; }
 
         .chef-img { position: absolute; bottom: -20px; left: -100px; width: 200px; z-index: 2; }
-        .utensils-img { position: absolute; top: -40px; right: -40px; width: 120px; transform: rotate(15deg); }
 
         /* --- 게임 메인 화면 --- */
         #game-screen { display: none; flex: 1; padding: 15px; flex-direction: column; box-sizing: border-box; }
         #game-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        #game-container { display: flex; width: 100%; height: calc(100vh - 120px); gap: 15px; overflow-x: auto; }
+        #game-container { display: flex; width: 100%; height: calc(100vh - 120px); gap: 15px; }
 
         #food-selection { min-width: 320px; width: 25%; height: 100%; background: white; border-radius: 30px; padding: 15px; border: 4px solid #ffcc99; overflow-y: auto; }
         .image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
-        .draggable-food { width: 100%; aspect-ratio: 1/1; cursor: grab; object-fit: cover; border-radius: 15px; border: 2px solid #eee; }
-
-        #tray-section { min-width: 1250px; flex: 1; display: flex; align-items: center; justify-content: center; background: white; border-radius: 35px; border: 4px solid #b3e6ff; position: relative; }
-        #tray-wrapper { position: relative; width: 1200px; height: 850px; background-image: url('tray.png'); background-size: contain; background-repeat: no-repeat; background-position: center; }
-
-        .drop-zone { position: absolute; display: flex; align-items: center; justify-content: center; }
-        .drop-zone.drag-over { background: rgba(46, 204, 113, 0.3); border-radius: 50%; }
-        .drop-zone img { 
-            width: 180%; height: 180%; 
-            object-fit: contain; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.3));
-            pointer-events: none; z-index: 10;
+        
+        /* 음식 아이템 스타일 (이미지 대용 박스 포함) */
+        .food-item { 
+            width: 100%; aspect-ratio: 1/1; cursor: grab; 
+            border-radius: 15px; border: 2px solid #eee; 
+            overflow: hidden; display: flex; align-items: center; 
+            justify-content: center; background: #fff;
+            position: relative;
+        }
+        .food-item img { width: 100%; height: 100%; object-fit: cover; }
+        .food-item.no-img::after {
+            content: attr(data-name);
+            position: absolute; width: 100%; height: 100%;
+            background: #ffe0b3; display: flex; align-items: center;
+            justify-content: center; text-align: center; padding: 5px;
+            box-sizing: border-box; font-size: 1.1em; color: #d35400;
         }
 
-        #spot-carb  { top: 480px; left: 240px; width: 300px; height: 240px; } 
-        #spot-soup  { top: 480px; left: 660px; width: 300px; height: 240px; } 
-        #spot-side1 { top: 130px; left: 240px; width: 180px; height: 150px; }  
-        #spot-side2 { top: 120px; left: 510px; width: 180px; height: 150px; }  
-        #spot-side3 { top: 130px; left: 780px; width: 180px; height: 150px; }
+        #tray-section { flex: 1; display: flex; align-items: center; justify-content: center; background: white; border-radius: 35px; border: 4px solid #b3e6ff; position: relative; overflow: hidden; }
+        #tray-wrapper { position: relative; width: 1000px; height: 700px; background-image: url('tray.png'); background-size: contain; background-repeat: no-repeat; background-position: center; }
+
+        /* 드롭 존 설정 */
+        .drop-zone { position: absolute; display: flex; align-items: center; justify-content: center; }
+        .drop-zone.drag-over { background: rgba(46, 204, 113, 0.3); border-radius: 50%; }
+        
+        /* 식판 위 이미지 */
+        .drop-zone img:not(.topping-img) { width: 180%; height: 180%; object-fit: contain; pointer-events: none; }
+        .topping-img { position: absolute; width: 40% !important; height: 40% !important; bottom: 5%; right: 5%; z-index: 50; cursor: pointer; }
+
+        /* 식판 위치 */
+        #spot-carb  { top: 400px; left: 180px; width: 250px; height: 200px; } 
+        #spot-soup  { top: 400px; left: 540px; width: 250px; height: 200px; } 
+        #spot-side1 { top: 100px; left: 180px; width: 150px; height: 130px; }  
+        #spot-side2 { top: 90px; left: 410px; width: 150px; height: 130px; }  
+        #spot-side3 { top: 100px; left: 630px; width: 150px; height: 130px; }
 
         #sidebar { min-width: 220px; display: flex; flex-direction: column; gap: 8px; justify-content: center; }
         .score-board { background: #ffecb3; padding: 15px; border-radius: 20px; text-align: center; font-size: 1.8em; color: #e67e22; border: 3px solid #ffcc99; }
-        .light { padding: 12px; border-radius: 15px; background: #fff; font-weight: bold; text-align: center; border: 3px solid #eee; font-size: 1em; }
+        .light { padding: 12px; border-radius: 15px; background: #fff; font-weight: bold; text-align: center; border: 3px solid #eee; }
         .light.perfect { background: #e6ffed; border-color: #2ecc71; color: #155724; }
-        .light.warning { background: #fff9e6; border-color: #f1c40f; color: #856404; }
         .light.danger  { background: #ffe6e6; border-color: #e74c3c; color: #721c24; }
 
-        #success-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 40px; border-radius: 40px; border: 8px solid #ffcc99; z-index: 1000; text-align: center; box-shadow: 0 0 100px rgba(0,0,0,0.3); width: 450px; }
-        .btn { padding: 15px 30px; border-radius: 50px; border: none; cursor: pointer; font-weight: bold; font-size: 1.2em; font-family: 'Jua'; transition: 0.2s; }
-        .btn:hover { transform: scale(1.05); }
+        #success-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 40px; border-radius: 40px; border: 8px solid #ffcc99; z-index: 1000; text-align: center; width: 400px; }
+        .btn { padding: 15px 30px; border-radius: 50px; border: none; cursor: pointer; font-weight: bold; font-family: 'Jua'; transition: 0.2s; }
     </style>
 </head>
 <body>
 
     <div id="setup-screen">
         <div class="setup-card">
-            <img src="chef.png" class="chef-img" alt="선생님">
-            <img src="utensils.png" class="utensils-img" alt="도구">
             <h1>오늘의 식단 꾸미기</h1>
-            <p>영양소별로 사진을 넣어주세요! (안 넣어도 기본 음식으로 시작 가능해요)</p>
-            
             <div class="upload-grid">
-                <div class="upload-box">
-                    <label for="in-carb">🍚 탄수화물</label>
-                    <input type="file" id="in-carb" multiple accept="image/*">
-                </div>
-                <div class="upload-box">
-                    <label for="in-protein">🍖 단백질</label>
-                    <input type="file" id="in-protein" multiple accept="image/*">
-                </div>
-                <div class="upload-box">
-                    <label for="in-fat">🥑 지방</label>
-                    <input type="file" id="in-fat" multiple accept="image/*">
-                </div>
-                <div class="upload-box">
-                    <label for="in-calcium">🥛 칼슘</label>
-                    <input type="file" id="in-calcium" multiple accept="image/*">
-                </div>
-                <div class="upload-box">
-                    <label for="in-mineral">🥦 무기질</label>
-                    <input type="file" id="in-mineral" multiple accept="image/*">
-                </div>
+                <div class="upload-box"><label>🍚 탄수화물</label><input type="file" id="in-carb" multiple accept="image/*"></div>
+                <div class="upload-box"><label>🍖 단백질</label><input type="file" id="in-protein" multiple accept="image/*"></div>
+                <div class="upload-box"><label>🥑 지방/토핑</label><input type="file" id="in-fat" multiple accept="image/*"></div>
+                <div class="upload-box"><label>🥛 칼슘</label><input type="file" id="in-calcium" multiple accept="image/*"></div>
+                <div class="upload-box"><label>🥦 무기질</label><input type="file" id="in-mineral" multiple accept="image/*"></div>
             </div>
-
-            <button class="btn" style="background:#ff9933; color:white; width: 300px;" onclick="startGame()">급식 시작하기!</button>
+            <button class="btn" style="background:#ff9933; color:white; width: 300px; font-size:1.5em;" onclick="startGame()">급식 시작하기!</button>
         </div>
     </div>
 
     <div id="game-screen">
         <div id="game-header">
-            <button class="btn" style="background:#ddd; font-size: 0.9em;" onclick="location.reload()">◀ 처음으로</button>
-            <h2 style="color: #5cacee; font-size: 2em; margin: 0;">🥗 영양소를 골고루 담아보아요!</h2>
+            <button class="btn" style="background:#ddd;" onclick="location.reload()">◀ 처음으로</button>
+            <h2 style="color: #5cacee; font-size: 2em; margin: 0;">🥗 영양소를 골고루 담아요!</h2>
             <div style="width:100px"></div>
         </div>
         <div id="game-container">
-            <div id="food-selection">
-                <div class="image-grid" id="master-list"></div>
-            </div>
+            <div id="food-selection"><div class="image-grid" id="master-list"></div></div>
             <div id="tray-section">
                 <div id="tray-wrapper">
                     <div class="drop-zone" id="spot-carb"></div>
@@ -154,39 +126,25 @@
                 <div id="light-fat" class="light">지방 ⚪</div>
                 <div id="light-calcium" class="light">칼슘 ⚪</div>
                 <div id="light-mineral" class="light">무기질 ⚪</div>
+                <div id="light-salt" class="light">나트륨 ⚪</div>
             </div>
         </div>
     </div>
 
     <div id="success-modal">
-        <h1 id="result-title" style="font-size: 2.5em; color: #ff8000;">🎉 결과 발표 🎉</h1>
-        <p id="result-msg" style="font-size: 1.5em; margin: 20px 0;"></p>
-        <h2 id="final-score" style="color:#ff9933; font-size: 4em; margin: 10px 0;">0점</h2>
-        <button class="btn" style="background:#ff9933; color:white; width: 100%;" onclick="resetTrayOnly()">식판 비우고 다시 하기</button>
+        <h1>🎉 결과 발표 🎉</h1>
+        <h2 id="final-score">0점</h2>
+        <button class="btn" style="background:#ff9933; color:white; width: 100%;" onclick="resetTrayOnly()">식판 비우기</button>
     </div>
 
     <script src="data.js"></script>
     <script>
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playSound(type) {
+        function playSound() {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain); gain.connect(audioCtx.destination);
-            if(type === 'drop') {
-                osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
-                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-            } else if (type === 'win') {
-                [440, 554, 659].forEach((f, i) => {
-                    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-                    o.connect(g); g.connect(audioCtx.destination); o.type = 'triangle';
-                    o.frequency.setValueAtTime(f, audioCtx.currentTime + (i * 0.1));
-                    g.gain.setValueAtTime(0.1, audioCtx.currentTime + (i * 0.1));
-                    o.start(audioCtx.currentTime + (i * 0.1)); o.stop(audioCtx.currentTime + (i * 0.1) + 0.3);
-                });
-            }
+            osc.start(); osc.stop(audioCtx.currentTime + 0.1);
         }
 
         function startGame() {
@@ -194,52 +152,96 @@
             const listContainer = document.getElementById('master-list');
             listContainer.innerHTML = "";
             
-            // 1. 기본 음식 데이터 생성
-            for (let foodName in masterFoodData) { 
-                createFoodItem(foodName + ".png", foodName, masterFoodData[foodName]); 
+            // 데이터 로드 체크
+            if (typeof masterFoodData === 'undefined') {
+                alert("data.js 파일을 찾을 수 없습니다!"); return;
             }
-            
-            // 2. 영양소별 업로드 사진 처리
-            const types = ['carb', 'protein', 'fat', 'calcium', 'mineral'];
-            types.forEach(type => {
-                const inputElement = document.getElementById(`in-${type}`);
-                const files = inputElement.files;
-                if(files.length > 0) {
-                    Array.from(files).forEach(file => {
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                            // 사용자가 넣은 칸의 영양소를 강제로 부여
-                            createFoodItem(e.target.result, file.name, type);
-                        };
-                        reader.readAsDataURL(file);
-                    });
-                }
-            });
-            
+
+            for (let name in masterFoodData) {
+                createFoodItem(name);
+            }
             document.getElementById('setup-screen').style.display = 'none';
             document.getElementById('game-screen').style.display = 'flex';
         }
 
-        function createFoodItem(src, name, type) {
+        function createFoodItem(name) {
             const list = document.getElementById('master-list');
+            const type = masterFoodData[name];
+            
+            const container = document.createElement('div');
+            container.className = 'food-item';
+            container.dataset.name = name;
+            container.draggable = true;
+            
             const img = document.createElement('img');
-            img.src = src; img.className = 'draggable-food';
-            img.dataset.type = Array.isArray(type) ? type.join(',') : type;
-            img.draggable = true;
-            img.onerror = function() { this.style.display = 'none'; };
-            img.ondragstart = (ev) => { ev.dataTransfer.setData("src", src); ev.dataTransfer.setData("type", img.dataset.type); };
-            list.appendChild(img);
+            // 확장자 대소문자 문제 해결을 위한 순차적 로드 로직
+            img.src = name + ".png";
+            img.alt = name;
+
+            img.onerror = function() {
+                if (!this.dataset.retry) {
+                    this.dataset.retry = "1";
+                    this.src = name + ".PNG"; // 대문자로 재시도
+                } else {
+                    container.classList.add('no-img'); // 둘 다 실패 시 이름표 표시
+                    this.style.display = "none";
+                }
+            };
+
+            container.dataset.type = Array.isArray(type) ? type.join(',') : type;
+            container.ondragstart = (ev) => {
+                ev.dataTransfer.setData("src", img.src);
+                ev.dataTransfer.setData("type", container.dataset.type);
+                ev.dataTransfer.setData("isNoImg", container.classList.contains('no-img'));
+                ev.dataTransfer.setData("name", name);
+            };
+
+            container.appendChild(img);
+            list.appendChild(container);
         }
 
         document.querySelectorAll('.drop-zone').forEach(zone => {
             zone.ondragover = (e) => { e.preventDefault(); zone.classList.add('drag-over'); };
             zone.ondragleave = () => zone.classList.remove('drag-over');
             zone.ondrop = (e) => {
-                e.preventDefault(); zone.classList.remove('drag-over');
+                e.preventDefault();
+                zone.classList.remove('drag-over');
+                
                 const src = e.dataTransfer.getData("src");
-                const type = e.dataTransfer.getData("type");
-                zone.innerHTML = `<img src="${src}" data-type="${type}">`;
-                playSound('drop');
+                const typeStr = e.dataTransfer.getData("type");
+                const isNoImg = e.dataTransfer.getData("isNoImg") === "true";
+                const name = e.dataTransfer.getData("name");
+
+                const isTopping = typeStr.includes('topping');
+                
+                // 기존 요소 처리
+                if (isTopping) {
+                    const oldTopping = zone.querySelector('.topping-img');
+                    if (oldTopping) oldTopping.remove();
+                } else {
+                    zone.innerHTML = ""; // 일반 음식은 칸 비우기
+                }
+
+                if (isNoImg) {
+                    // 이미지가 없는 경우 텍스트 박스 생성
+                    const box = document.createElement('div');
+                    box.innerText = name;
+                    box.style.width = "80px"; box.style.height = "80px";
+                    box.style.background = "#ffcc99"; box.style.borderRadius = "10px";
+                    box.style.display = "flex"; box.style.alignItems = "center";
+                    box.style.justifyContent = "center"; box.style.textAlign = "center";
+                    box.dataset.type = typeStr;
+                    zone.appendChild(box);
+                } else {
+                    const img = document.createElement('img');
+                    img.src = src;
+                    img.dataset.type = typeStr;
+                    if (isTopping) img.className = 'topping-img';
+                    img.onclick = (ev) => { ev.stopPropagation(); img.remove(); updateGameState(); };
+                    zone.appendChild(img);
+                }
+
+                playSound();
                 updateGameState();
             };
             zone.onclick = () => { zone.innerHTML = ""; updateGameState(); };
@@ -247,37 +249,43 @@
 
         function updateGameState() {
             let counts = { carb: 0, protein: 0, fat: 0, calcium: 0, mineral: 0 };
-            let filledCount = 0;
-            document.querySelectorAll('.drop-zone img').forEach(img => {
-                filledCount++;
-                const tData = img.dataset.type;
-                tData.split(',').forEach(t => { if(counts[t.trim()] !== undefined) counts[t.trim()]++; });
+            let saltCount = 0;
+            let filledMainCount = 0;
+
+            document.querySelectorAll('.drop-zone img, .drop-zone div').forEach(el => {
+                if (el.dataset.type) {
+                    if (!el.classList.contains('topping-img')) filledMainCount++;
+                    el.dataset.type.split(',').forEach(t => {
+                        if (counts[t.trim()] !== undefined) counts[t.trim()]++;
+                        if (t.trim() === 'salt') saltCount++;
+                    });
+                }
             });
-            let currentScore = 0;
+
+            let score = 0;
             const labels = { carb: "탄수화물", protein: "단백질", fat: "지방", calcium: "칼슘", mineral: "무기질" };
             for (let t in counts) {
                 const light = document.getElementById('light-' + t);
-                if (counts[t] === 0) { light.className = 'light'; light.innerHTML = labels[t] + " ⚪"; }
-                else if (counts[t] === 1) { currentScore += 20; light.className = 'light perfect'; light.innerHTML = labels[t] + " ✅적정"; }
-                else { currentScore += 10; light.className = 'light warning'; light.innerHTML = labels[t] + " ⚠️충분"; }
+                if (counts[t] >= 1) { score += 20; light.className = 'light perfect'; light.innerHTML = labels[t] + " ✅"; }
+                else { light.className = 'light'; light.innerHTML = labels[t] + " ⚪"; }
             }
-            document.getElementById('score-val').innerText = currentScore;
-            if (filledCount === 5) { setTimeout(showResult, 800); }
+
+            const sLight = document.getElementById('light-salt');
+            if (saltCount > 2) { score -= 20; sLight.className = 'light danger'; sLight.innerHTML = "나트륨 ⚠️짜요!"; }
+            else if (saltCount > 0) { sLight.className = 'light perfect'; sLight.innerHTML = "나트륨 ✅"; }
+            else { sLight.className = 'light'; sLight.innerHTML = "나트륨 ⚪"; }
+
+            document.getElementById('score-val').innerText = Math.max(0, score);
+            if (filledMainCount === 5) setTimeout(showResult, 800);
         }
 
         function showResult() {
-            const score = parseInt(document.getElementById('score-val').innerText);
-            let title = score >= 80 ? "👑 마스터 영양사" : "🥈 주니어 영양사";
-            let msg = score >= 80 ? "대단해요! 아주 건강한 식단입니다." : "조금 더 골고루 담아볼까요?";
-            if(score >= 80) playSound('win');
-            document.getElementById('result-title').innerText = title;
-            document.getElementById('result-msg').innerText = msg;
-            document.getElementById('final-score').innerText = score + "점";
+            document.getElementById('final-score').innerText = document.getElementById('score-val').innerText + "점";
             document.getElementById('success-modal').style.display = 'block';
         }
 
         function resetTrayOnly() {
-            document.querySelectorAll('.drop-zone').forEach(zone => zone.innerHTML = "");
+            document.querySelectorAll('.drop-zone').forEach(z => z.innerHTML = "");
             document.getElementById('success-modal').style.display = 'none';
             updateGameState();
         }
