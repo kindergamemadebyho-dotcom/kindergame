@@ -94,9 +94,9 @@ iframe { width:100%; height:100%; border:none; }
 
 <div id="basic" class="tab-menu category">
     <button class="tab-btn active" onclick="loadGame('game1/game1_timer.html', this, 'https://docs.google.com/presentation/d/e/2PACX-1vQFYcbES22awYKp_hQHsxmLAZ7MjdLMIRFu5q33bBYHHcpdJXFZJiIjOXVE8iNQmzW3RKCeU9QEYkcr/pubembed?start=false&loop=false&delayms=3000')">🐰 정리 타이머</button>
-    <button class="tab-btn" onclick="loadGame('game3/game3_memory.html', this, '여기에_구글주소_넣기')">❤️ 메모리 카드</button>
-    <button class="tab-btn" onclick="loadGame('game4/game4_puzzle.html', this, '여기에_구글주소_넣기')">🧩 퍼즐 놀이</button>
-    <button class="tab-btn" onclick="loadGame('game8/game8_roulette.html', this, '여기에_구글주소_넣기')">🎈 룰렛 놀이</button>
+    <button class="tab-btn" onclick="loadGame('game3/game3_memory.html', this, 'https://docs.google.com/presentation/d/e/2PACX-1vTbc2WhSJNK19EmAlEY_qsM6-b2CCRdZBWPdcG-TGKlpgK406DYY9-oeXCKlbnlFuHsR9jxcFlK_OS1/pubembed?start=false&loop=false&delayms=3000')">❤️ 메모리 카드</button>
+    <button class="tab-btn" onclick="loadGame('game4/game4_puzzle.html', this, 'https://docs.google.com/presentation/d/e/2PACX-1vQTaIbxiczQzHekGvFYJeXHzaEnk8fWGT2rBOJBsqTh9-mB1wPdtlqLnS2fYtIfrWOQvdO7B9si7aCI/pubembed?start=false&loop=false&delayms=3000')">🧩 퍼즐 놀이</button>
+    <button class="tab-btn" onclick="loadGame('game8/game8_roulette.html', this, 'https://docs.google.com/presentation/d/e/2PACX-1vQLLXKyrQ5FBo7vhEzhfG2y1nY1gC3ntefbVzsYnA-gyoxTgQ4NRhE0fFyVXlQPc-ZGSnOn9KYHWn7W/pubembed?start=false&loop=false&delayms=3000')">🎈 룰렛 놀이</button>
 </div>
 
 <div id="creative" class="tab-menu category" style="display:none;">
@@ -107,7 +107,7 @@ iframe { width:100%; height:100%; border:none; }
 
 <div id="health" class="tab-menu category" style="display:none;">
     <button class="tab-btn" onclick="loadGame('game7/game7_strawberry.html', this, 'https://docs.google.com/presentation/d/e/2PACX-1vRgiIiOGcdpxYnQzxn-nfiLN3WLUu_85NfZiMQLU9nxUjfr3dHtA1HohbFQz_SKehwQOLNdXYextSnl/pubembed?start=false&loop=false&delayms=3000')">😋 좋은음식! 나쁜음식!(웹캠필요)</button>
-    <button class="tab-btn" onclick="loadGame('game9/game9_rice.html', this, '여기에_구글주소_넣기')">🍚 오늘은 내가 영양사!</button>
+    <button class="tab-btn" onclick="loadGame('game9/game9_rice.html', this, 'https://docs.google.com/presentation/d/e/2PACX-1vRglMrgAxiEg90xrBPWQkuYV08M7yyvI-raq-90wFqsdao_WwWITe50KJcku2kgv-VoSRA_vBX3Pg3B/pubembed?start=false&loop=false&delayms=3000')">🍚 오늘은 내가 영양사!</button>
     <button class="tab-btn" onclick="loadGame('game10/game10_teeth.html', this, '여기에_구글주소_넣기')">🪥 양치 대작전(웹캠필요)</button>
 </div>
 
@@ -157,7 +157,51 @@ function closeGuide() {
     document.getElementById('guideFrame').src = ""; 
 }
 
-// ... 나머지 showCategory, toggleFullscreen 함수는 동일합니다 ...
+//// ... 기존 함수들(loadGame, openGuide, closeGuide) 뒤에 이어서 작성하세요 ...
+
+function closeGuide() {
+    document.getElementById('guideOverlay').style.display = 'none';
+    document.getElementById('guideFrame').src = ""; 
+}
+
+// 여기서부터 추가하시면 됩니다! 👇
+
+// 1. 카테고리(기본/창의/안전) 전환 함수
+function showCategory(categoryId, btn) {
+    // 모든 카테고리 메뉴를 숨김
+    const categories = document.querySelectorAll('.category');
+    categories.forEach(cat => {
+        cat.style.display = 'none';
+    });
+
+    // 선택한 카테고리만 보임 (flex 레이아웃 유지)
+    const targetCategory = document.getElementById(categoryId);
+    if (targetCategory) {
+        targetCategory.style.display = 'flex';
+    }
+
+    // 상단 버튼 색상(active 클래스) 변경
+    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+// 2. 전체화면 모드 전환 함수
+function toggleFullscreen() {
+    const elem = document.getElementById('gameContainer');
+    if (!document.fullscreenElement) {
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen();
+        } else if (elem.webkitRequestFullscreen) { /* Safari */
+            elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) { /* IE11 */
+            elem.msRequestFullscreen();
+        }
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    }
+}
 </script>
 
 </body>
