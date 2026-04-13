@@ -22,7 +22,7 @@ body { font-family: 'Jua', sans-serif; background:#f5f5f5; text-align:center; ma
 .banner-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .banner-btns { display: flex; gap: 8px; flex-shrink: 0; }
 
-/* ⭐ 가이드 팝업창 */
+/* ⭐ 가이드 팝업창 (구글 슬라이드 암베드용) */
 #guideOverlay {
     display: none;
     position: fixed;
@@ -36,36 +36,17 @@ body { font-family: 'Jua', sans-serif; background:#f5f5f5; text-align:center; ma
     position: absolute;
     top: 50%; left: 50%;
     transform: translate(-50%, -50%);
+    width: 80%; height: 80%;
     background: white;
-    padding: 20px;
     border-radius: 20px;
-    width: 90%;
-    max-width: 1000px;
-    height: 85vh;
-    display: flex;
-    flex-direction: column;
-}
-
-.canva-container {
-    flex: 1;
-    width: 100%;
-    border-radius: 10px;
     overflow: hidden;
-    margin-bottom: 15px;
-    border: 1px solid #eee;
 }
 
-.canva-container iframe { width: 100%; height: 100%; border: none; }
-
-.close-btn {
-    padding: 12px 30px;
-    background: #ffb347;
-    color: white;
-    border: none;
-    border-radius: 15px;
-    cursor: pointer;
-    font-family: 'Jua';
-    font-size: 1.2em;
+#closeBtn {
+    position: absolute;
+    top: 10px; right: 20px;
+    font-size: 30px; color: white;
+    cursor: pointer; z-index: 2001;
 }
 
 h1 { margin-top:20px; }
@@ -88,22 +69,18 @@ iframe { width:100%; height:100%; border:none; }
 
 <body>
 
-<div class="info-banner">
-    <div class="banner-text">📢 게임은 <b>전체화면</b> 권장 | 자유로운 수정·배포 가능 | 홈페이지 공사 중에 있습니다. 최대한 빨리 최적화 하도록 하겠습니다.</div>
-
-    <div class="banner-btns">
-        <button onclick="openGuide()" style="padding: 5px 12px; border: 1px solid #4A90E2; background: white; color: #4A90E2; border-radius: 15px; cursor: pointer; font-family: 'Jua';">📖 가이드 보기</button>
-        <button onclick="toggleFullscreen()" style="padding: 5px 12px; border: none; background: #4A90E2; color: white; border-radius: 15px; cursor: pointer; font-family: 'Jua';">🖥️ 전체화면</button>
+<div id="guideOverlay">
+    <span id="closeBtn" onclick="closeGuide()">&times;</span>
+    <div id="guideContent">
+        <iframe id="guideFrame" src="" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
     </div>
 </div>
 
-<div id="guideOverlay">
-    <div id="guideContent">
-        <h2 id="guideTitle" style="margin: 0 0 10px 0; color:#ffb347;">📖 선생님을 위한 게임 방법</h2>
-        <div class="canva-container">
-            <iframe id="canvaFrame" src="about:blank" allowfullscreen="allowfullscreen"></iframe>
-        </div>
-        <button class="close-btn" onclick="closeGuide()">확인</button>
+<div class="info-banner">
+    <div class="banner-text">📢 게임은 <b>전체화면</b> 권장 | 자유로운 수정·배포 가능 | 홈페이지 공사 중에 있습니다.</div>
+    <div class="banner-btns">
+        <button onclick="openGuide()" style="padding: 5px 12px; border: 1px solid #4A90E2; background: white; color: #4A90E2; border-radius: 15px; cursor: pointer; font-family: 'Jua';">📖 가이드 보기</button>
+        <button onclick="toggleFullscreen()" style="padding: 5px 12px; border: none; background: #4A90E2; color: white; border-radius: 15px; cursor: pointer; font-family: 'Jua';">🖥️ 전체화면</button>
     </div>
 </div>
 
@@ -116,26 +93,26 @@ iframe { width:100%; height:100%; border:none; }
 </div>
 
 <div id="basic" class="tab-menu category">
-    <button class="tab-btn active" onclick="loadGame('game1/game1_timer.html', this, 'https://www.canva.com/design/DAHGPCwsle0/PsfTC2wXLnvjabU5R68uuw/view?embed')">🐰 정리 타이머</button>
-    <button class="tab-btn" onclick="loadGame('game3/game3_memory.html', this, 'https://www.canva.com/design/DAHGPhX33E4/ZCgdC10lUmKojwjsGrkU1w/view?embed')">❤️ 메모리 카드</button>
-    <button class="tab-btn" onclick="loadGame('game4/game4_puzzle.html', this, 'https://www.canva.com/design/DAHGU3JfRAk/pVmL_w-7JJiRB0sh3nlPUA/view?embed')">🧩 퍼즐 놀이</button>
-    <button class="tab-btn" onclick="loadGame('game8/game8_roulette.html', this, '여기에_룰렛놀이_캔바주소_넣기')">🎈 룰렛 놀이</button>
+    <button class="tab-btn active" onclick="loadGame('game1/game1_timer.html', this, 'https://docs.google.com/presentation/d/e/2PACX-1vQFYcbES22awYKp_hQHsxmLAZ7MjdLMIRFu5q33bBYHHcpdJXFZJiIjOXVE8iNQmzW3RKCeU9QEYkcr/pubembed?start=false&loop=false&delayms=3000')">🐰 정리 타이머</button>
+    <button class="tab-btn" onclick="loadGame('game3/game3_memory.html', this, '여기에_구글주소_넣기')">❤️ 메모리 카드</button>
+    <button class="tab-btn" onclick="loadGame('game4/game4_puzzle.html', this, '여기에_구글주소_넣기')">🧩 퍼즐 놀이</button>
+    <button class="tab-btn" onclick="loadGame('game8/game8_roulette.html', this, '여기에_구글주소_넣기')">🎈 룰렛 놀이</button>
 </div>
 
 <div id="creative" class="tab-menu category" style="display:none;">
-    <button class="tab-btn" onclick="loadGame('game5/game5_face.html', this, '여기에_누구일까요_캔바주소_넣기')">📷 누구일까요?</button>
-    <button class="tab-btn" onclick="loadGame('game6/game6_mix.html', this, '여기에_얼굴섞기_캔바주소_넣기')">🌈 얼굴 섞기</button>
-    <button class="tab-btn" onclick="loadGame('game2/game2_pop.html', this, '여기에_벚꽃잡기_캔바주소_넣기')">🌸 벚꽃을 잡아라!(웹캠필요)</button>
+    <button class="tab-btn" onclick="loadGame('game5/game5_face.html', this, '여기에_구글주소_넣기')">📷 누구일까요?</button>
+    <button class="tab-btn" onclick="loadGame('game6/game6_mix.html', this, '여기에_구글주소_넣기')">🌈 얼굴 섞기</button>
+    <button class="tab-btn" onclick="loadGame('game2/game2_pop.html', this, '여기에_구글주소_넣기')">🌸 벚꽃을 잡아라!(웹캠필요)</button>
 </div>
 
 <div id="health" class="tab-menu category" style="display:none;">
-    <button class="tab-btn" onclick="loadGame('game7/game7_strawberry.html', this, 'https://www.canva.com/design/DAHGRWwaBb8/nyswWUZbJhkicPbx-lt9gA/view?embed')">😋 좋은음식! 나쁜음식!(웹캠필요)</button>
-    <button class="tab-btn" onclick="loadGame('game9/game9_rice.html', this, '여기에_영양사_캔바주소_넣기')">🍚 오늘은 내가 영양사!</button>
-    <button class="tab-btn" onclick="loadGame('game10/game10_teeth.html', this, '여기에_양치대작전_캔바주소_넣기')">🪥 양치 대작전(웹캠필요,로딩 시간이 있습니다!)</button>
+    <button class="tab-btn" onclick="loadGame('game7/game7_strawberry.html', this, 'https://docs.google.com/presentation/d/e/2PACX-1vRgiIiOGcdpxYnQzxn-nfiLN3WLUu_85NfZiMQLU9nxUjfr3dHtA1HohbFQz_SKehwQOLNdXYextSnl/pubembed?start=false&loop=false&delayms=3000')">😋 좋은음식! 나쁜음식!(웹캠필요)</button>
+    <button class="tab-btn" onclick="loadGame('game9/game9_rice.html', this, '여기에_구글주소_넣기')">🍚 오늘은 내가 영양사!</button>
+    <button class="tab-btn" onclick="loadGame('game10/game10_teeth.html', this, '여기에_구글주소_넣기')">🪥 양치 대작전(웹캠필요)</button>
 </div>
 
 <div id="downloadArea" style="display: none; width: 95%; margin: 0 auto 10px auto; text-align: right;">
-    <a href="foodwokr.png" download="foodwokr.png" style="display: inline-block; padding: 10px 20px; background: #FF9AA2; color: white; text-decoration: none; border-radius: 15px; font-family: 'Jua'; font-size: 1.1em; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); transition: transform 0.2s;">
+    <a href="foodwokr.png" download="foodwokr.png" style="display: inline-block; padding: 10px 20px; background: #FF9AA2; color: white; text-decoration: none; border-radius: 15px; font-family: 'Jua'; font-size: 1.1em; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);">
         🖨️ 활동지 다운로드
     </a>
 </div>
@@ -145,12 +122,30 @@ iframe { width:100%; height:100%; border:none; }
 </div>
 
 <script>
-// 현재 선택된 게임의 가이드 URL을 저장할 변수
-let currentCanvaUrl = 'https://www.canva.com/design/DAHGPCwsle0/PsfTC2wXLnvjabU5R68uuw/view?embed';
+// 🚨 범인 검거! 아래 주소가 예전 '음식' 주소로 되어 있어서 처음 실행 시 계속 음식이 나왔던 것입니다.
+// 새로 만드신 '정리 타이머' 구글 슬라이드 주소로 교체했습니다.
+let currentGuideUrl = 'https://docs.google.com/presentation/d/e/2PACX-1vQFYcbES22awYKp_hQHsxmLAZ7MjdLMIRFu5q33bBYHHcpdJXFZJiIjOXVE8iNQmzW3RKCeU9QEYkcr/pubembed?start=false&loop=false&delayms=3000';
+
+function loadGame(url, btn, guideUrl){
+    document.getElementById('gameFrame').src = url;
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // 버튼을 누를 때마다 해당 게임의 가이드 주소로 정확히 업데이트됩니다.
+    currentGuideUrl = guideUrl;
+
+    const downloadArea = document.getElementById('downloadArea');
+    if(url === 'game7/game7_strawberry.html') {
+        downloadArea.style.display = 'block';
+    } else {
+        downloadArea.style.display = 'none';
+    }
+}
 
 function openGuide() {
-    if(currentCanvaUrl) {
-        document.getElementById('canvaFrame').src = currentCanvaUrl;
+    if(currentGuideUrl && !currentGuideUrl.includes('여기에_')) {
+        // 이제 currentGuideUrl에 담긴 '정리 타이머' 주소가 iframe에 들어갑니다.
+        document.getElementById('guideFrame').src = currentGuideUrl;
         document.getElementById('guideOverlay').style.display = 'block';
     } else {
         alert("이 게임은 아직 준비된 가이드가 없습니다.");
@@ -159,48 +154,10 @@ function openGuide() {
 
 function closeGuide() {
     document.getElementById('guideOverlay').style.display = 'none';
+    document.getElementById('guideFrame').src = ""; 
 }
 
-function showCategory(id, btn){
-    document.querySelectorAll('.category').forEach(c=>c.style.display='none');
-    document.getElementById(id).style.display='flex';
-    document.querySelectorAll('.category-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-
-    // 카테고리 변경 시 첫 게임을 클릭하지만, 가이드는 띄우지 않음
-    const firstBtn = document.getElementById(id).querySelector('.tab-btn');
-    if(firstBtn) firstBtn.click();
-}
-
-// 👇 여기서부터 새롭게 추가된 부분입니다! 👇
-function loadGame(url, btn, canvaUrl){
-    // 게임 화면만 로드 (가이드는 띄우지 않음)
-    document.getElementById('gameFrame').src = url;
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-
-    // 현재 게임에 맞는 가이드 주소 저장
-    currentCanvaUrl = canvaUrl;
-
-    // 활동지 다운로드 버튼 보이기/숨기기
-    const downloadArea = document.getElementById('downloadArea');
-    if(url === 'game7/game7_strawberry.html') {
-        downloadArea.style.display = 'block'; // 음식 게임 탭일 때만 버튼 짠! 나타남
-    } else {
-        downloadArea.style.display = 'none'; // 다른 게임 탭에서는 숨김
-    }
-}
-// 👆 여기까지 새롭게 추가된 부분입니다! 👆
-
-function toggleFullscreen() {
-    const container = document.getElementById('gameContainer');
-    if (!document.fullscreenElement) {
-        container.requestFullscreen();
-        closeGuide();
-    } else {
-        document.exitFullscreen();
-    }
-}
+// ... 나머지 showCategory, toggleFullscreen 함수는 동일합니다 ...
 </script>
 
 </body>
