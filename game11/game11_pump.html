@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>🌸 봄 꽃 펌프 진짜 최종 피날레 🌸</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&family=Nanum+Gothic:wght@700&display=swap');
+        body { font-family: 'Nanum Gothic', sans-serif; text-align: center; background-color: #fff0f5; margin: 0; overflow: hidden; color: #333; }
+        #game-container { position: relative; width: 640px; height: 480px; margin: 20px auto; border: 8px solid #ffb6c1; border-radius: 30px; background-color: #000; overflow: hidden; }
+        #output_canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20; pointer-events: none; }
+        
+        /* 메뉴 & 랭킹 패널 */
+        #menu-panel, #ranking-panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 400; background: linear-gradient(135deg, #fffafa 0%, #ffe4e1 100%); padding: 30px; border-radius: 30px; border: 5px solid #ff69b4; width: 320px; box-shadow: 0 0 50px rgba(0,0,0,0.3); }
+        .control-btn { padding: 12px 25px; background: #ff69b4; color: white; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; font-size: 18px; box-shadow: 0 4px 0 #db7093; margin-top: 10px; }
+        
+        #countdown-display { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 500; font-size: 150px; font-weight: bold; color: #ffff00; text-shadow: 0 0 30px #ff69b4; display: none; pointer-events: none; }
+        .info-bar { position: absolute; top: 15px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; z-index: 100; visibility: hidden; }
+        .info-box { font-size: 24px; font-weight: bold; background: white; color: #ff1493; padding: 8px 25px; border-radius: 50px; border: 3px solid #ffb6c1; }
+        
+        #central-question { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); z-index: 50; display: none; text-align: center; background: #ffffff; border: 10px solid #ffb6c1; padding: 10px; border-radius: 40px; width: 420px; height: 420px; box-shadow: 0 0 40px rgba(255,182,193,0.9); }
+        #central-question img { width: 100%; height: 85%; object-fit: contain; }
+
+        /* 발판 배치 */
+        .pad-guide { position: absolute; width: 105px; height: 105px; border-radius: 15px; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; visibility: hidden; }
+        #pad-azalea { top: 125px; left: 212px; } #pad-dandelion { top: 125px; left: 322px; } #pad-cherry { top: 235px; left: 267px; } #pad-forsythia { top: 345px; left: 212px; } #pad-magnolia { top: 345px; left: 322px; }
+        .pad-guide.active-target { border: 4px solid #ffff00; background: rgba(255,255,0,0.3); }
+
+        /* 반짝임 효과 레이어 */
+        #flash-bg { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 40; display: none; }
+        #fullscreen-btn { position: absolute; bottom: 10px; right: 10px; z-index: 500; opacity: 0.6; padding: 5px 15px; font-size: 12px; }
+        
+        #waiting-msg { position: absolute; top: 10px; left: 10px; z-index: 200; background: rgba(255,255,255,0.9); padding: 15px; border-radius: 20px; border: 3px solid #ff69b4; width: 200px; text-align: left; display: none; }
+        .status-item { font-size: 13px; margin-bottom: 3px; color: #ff4444; } .status-item.ok { color: #00cc00; }
+        
+        .rank-item { padding: 5px; border-bottom: 1px dashed #ffb6c1; display: flex; justify-content: space-between; font-size: 18px; }
+        .score-popup { position: absolute; font-size: 50px; font-weight: bold; z-index: 100; animation: fadeUp 0.6s forwards; pointer-events: none; }
+        @keyframes fadeUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-80px); } }
+    </style>
+</head>
+<body>
+    <audio id="bgm" src="music.mp3" loop preload="auto"></audio>
+    <div id="game-container">
+        <video id="input_video" style="display:none;" autoplay playsinline></video>
+        <div id="flash-bg"></div>
+        <canvas id="output_canvas" width="640" height="480"></canvas>
+        <div id="countdown-display"></div>
+        <button id="fullscreen-btn" class="control-btn" onclick="toggleFS()">[ 꽉 찬 화면 ]</button>
+        
+        <div class="info-bar" id="game-ui">
+            <button class="control-btn" style="font-size:14px;" onclick="location.reload()">🏠 처음으로</button>
+            <div class="info-box">🌸 <span id="score">0</span>송이</div>
+            <div class="info-box">⏳ <span id="timer">01:00</span></div>
+        </div>
+
+        <div id="central-question">
+            <img id="q-img" src="">
+            <div id="q-name" style="font-family:'Nanum Pen Script'; font-size:50px; color:#ff1493;"></div>
+        </div>
+
+        <div id="menu-panel">
+            <h2 style="font-family:'Nanum Pen Script'; font-size:45px; margin:0;">🌸 봄 꽃 펌프 설정</h2>
+            <div style="margin:20px 0; text-align:left;">
+                <label>놀이 시간: </label><select id="time-select" style="width:100%; padding:5px;"><option value="60">1분</option><option value="120">2분</option></select><br><br>
+                <label>난이도: </label><select id="diff-select" style="width:100%; padding:5px;"><option value="easy">쉬움</option><option value="normal">보통</option><option value="hard">어려움 (감점)</option></select>
+            </div>
+            <button class="control-btn" style="width:100%;" onclick="startSetup()">놀이 준비 시작!</button>
+        </div>
+
+        <div id="ranking-panel" style="display:none;">
+            <h2 style="font-family:'Nanum Pen Script'; font-size:45px; color:#ff1493; margin:0;">🏆 명예의 전당</h2>
+            <div id="rank-list" style="margin:20px 0;"></div>
+            <button class="control-btn" style="width:100%;" onclick="location.reload()">다시 하기</button>
+        </div>
+
+        <div id="waiting-msg">
+            <h3 style="margin:0; font-size:16px;">⚙️ 발판 설치</h3>
+            <div id="status-display" style="margin-top:10px;">
+                <div id="stat-pad-azalea" class="status-item">● 진달래 대기</div><div id="stat-pad-dandelion" class="status-item">● 민들레 대기</div><div id="stat-pad-cherry" class="status-item">● 벚꽃 대기</div><div id="stat-pad-forsythia" class="status-item">● 개나리 대기</div><div id="stat-pad-magnolia" class="status-item">● 목련 대기</div>
+            </div>
+        </div>
+
+        <div id="pad-azalea" class="pad-guide"><img src="jindallae.png"></div><div id="pad-dandelion" class="pad-guide"><img src="dandelion.png"></div><div id="pad-cherry" class="pad-guide"><img src="cherry.png"></div><div id="pad-forsythia" class="pad-guide"><img src="gaenari.png"></div><div id="pad-magnolia" class="pad-guide"><img src="magnolia.png"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script>
+        const video = document.getElementById('input_video'), canvas = document.getElementById('output_canvas'), context = canvas.getContext('2d');
+        const bgm = document.getElementById('bgm'), flashBg = document.getElementById('flash-bg'), waitingMsg = document.getElementById('waiting-msg');
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        // 효과음 생성 (삑, 띠, 띵)
+        function playSound(freq, duration, type='sine', vol=0.2) {
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        }
+
+        let isGameRunning = false, isSetupMode = false, score = 0, timeLeft = 60, currentTargetId = null, isAnswered = false;
+        let lastTwoTasks = [], emergencyMode = false;
+
+        const flowerInfo = { 'pad-azalea': { name: '진달래', x: 212, y: 125 }, 'pad-dandelion': { name: '민들레', x: 322, y: 125 }, 'pad-cherry': { name: '벚꽃', x: 267, y: 235 }, 'pad-forsythia': { name: '개나리', x: 212, y: 345 }, 'pad-magnolia': { name: '목련', x: 322, y: 345 } };
+        const zoneIds = Object.keys(flowerInfo), readyStatus = { 'pad-azalea': false, 'pad-dandelion': false, 'pad-cherry': false, 'pad-forsythia': false, 'pad-magnolia': false };
+
+        const selfieSegmentation = new SelfieSegmentation({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${file}`});
+        selfieSegmentation.setOptions({ modelSelection: 1 });
+        selfieSegmentation.onResults(onResults);
+        new Camera(video, { onFrame: async () => { await selfieSegmentation.send({image: video}); }, width: 640, height: 480 }).start();
+
+        function startSetup() { document.getElementById('menu-panel').style.display = 'none'; waitingMsg.style.display = 'block'; isSetupMode = true; if (audioCtx.state === 'suspended') audioCtx.resume(); }
+
+        function onResults(results) {
+            context.clearRect(0, 0, 640, 480);
+            if (isGameRunning) { context.fillStyle = 'black'; context.fillRect(0, 0, 640, 480); }
+            else if (isSetupMode) {
+                context.save(); context.translate(640, 0); context.scale(-1, 1); context.drawImage(results.image, 0, 0, 640, 480); context.restore();
+                zoneIds.forEach(id => { const z = flowerInfo[id]; context.strokeStyle = readyStatus[id] ? '#00ff00' : '#ffffff'; context.lineWidth = 3; context.strokeRect(z.x, z.y, 105, 105); context.font = "bold 14px Nanum Gothic"; context.fillStyle = context.strokeStyle; context.textAlign = "center"; context.fillText(flowerInfo[id].name, z.x + 52, z.y + 58); });
+            }
+            const maskData = getMaskData(results.segmentationMask);
+            let rx = -1, ry = -1;
+            for (let y = 479; y > 0; y -= 10) { for (let x = 0; x < 640; x += 10) { if (maskData[(y * 640 + x) * 4 + 3] > 120) { ry = y; rx = 640 - x; break; } } if (ry !== -1) break; }
+            if (rx !== -1) {
+                if (!isGameRunning) { context.fillStyle = "#00ff00"; context.beginPath(); context.arc(rx, ry, 10, 0, Math.PI * 2); context.fill(); }
+                if (isSetupMode && !isGameRunning) { zoneIds.forEach(id => { const z = flowerInfo[id]; if (rx > z.x && rx < z.x + 105 && ry > z.y && ry < z.y + 105) { if (!readyStatus[id]) { readyStatus[id] = true; document.getElementById('stat-' + id).innerText = `● ${flowerInfo[id].name} 완료`; document.getElementById('stat-' + id).className = 'status-item ok'; if (Object.values(readyStatus).every(v => v === true)) autoStartCountdown(); } } }); }
+                else if (isGameRunning && !isAnswered) { checkHit(rx, ry); }
+            }
+        }
+
+        function getMaskData(mask) { const c = document.createElement('canvas'); c.width = 640; c.height = 480; const ctx = c.getContext('2d'); ctx.drawImage(mask, 0, 0, 640, 480); return ctx.getImageData(0, 0, 640, 480).data; }
+
+        function autoStartCountdown() {
+            isSetupMode = false; waitingMsg.style.display = 'none';
+            let count = 3; const cd = document.getElementById('countdown-display'); cd.style.display = 'block'; cd.innerText = count;
+            // 카운트다운 효과음 (띠)
+            playSound(440, 0.2, 'sine', 0.3);
+            const timer = setInterval(() => {
+                count--;
+                if (count > 0) { cd.innerText = count; playSound(440, 0.2, 'sine', 0.3); }
+                else { clearInterval(timer); cd.style.display = 'none'; playSound(880, 0.5, 'sine', 0.4); startGame(); } // 시작 효과음 (띵)
+            }, 1000);
+        }
+
+        function startGame() {
+            isGameRunning = true; timeLeft = parseInt(document.getElementById('time-select').value);
+            document.getElementById('game-ui').style.visibility = 'visible'; zoneIds.forEach(id => document.getElementById(id).style.visibility = 'visible');
+            bgm.playbackRate = 1.0; bgm.play();
+            const totalTime = timeLeft;
+            const timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').innerText = `0${Math.floor(timeLeft/60)}:${(timeLeft%60).toString().padStart(2, '0')}`;
+                
+                // 시간이 1/6 이하 남았을 때 (긴급 모드)
+                if (timeLeft <= totalTime / 6 && timeLeft > 0) {
+                    bgm.playbackRate = 1.5; emergencyMode = true;
+                    // 빨간색 반짝임 효과
+                    flashBg.style.backgroundColor = 'rgba(255, 0, 0, 0.3)';
+                    flashBg.style.display = (timeLeft % 2 === 0) ? 'block' : 'none';
+                }
+
+                if (timeLeft <= 0) { clearInterval(timer); endGame(); }
+            }, 1000);
+            nextStage();
+        }
+
+        function checkHit(fx, fy) {
+            const z = flowerInfo[currentTargetId];
+            if (fx > z.x && fx < z.x + 105 && fy > z.y && fy < z.y + 105) {
+                isAnswered = true; score++; document.getElementById('score').innerText = score;
+                playSound(1000, 0.15, 'square', 0.3); // 정답 효과음 (삑)
+                showPopup(fx, fy, '+1', '#ffff00');
+                flashBg.style.backgroundColor = 'white'; flashBg.style.display = 'block';
+                setTimeout(() => { if(!emergencyMode) flashBg.style.display = 'none'; }, 100);
+                setTimeout(() => { isAnswered = false; nextStage(); }, 800);
+            } else if (document.getElementById('diff-select').value === 'hard') {
+                zoneIds.forEach(id => { if (id !== currentTargetId) { const oz = flowerInfo[id]; if (fx > oz.x && fx < oz.x + 105 && fy > oz.y && fy < oz.y + 105) { score = Math.max(0, score - 1); document.getElementById('score').innerText = score; } } });
+            }
+        }
+
+        function nextStage() {
+            zoneIds.forEach(id => document.getElementById(id).classList.remove('active-target'));
+            let nextId; do { nextId = zoneIds[Math.floor(Math.random() * zoneIds.length)]; } while (lastTwoTasks.includes(nextId));
+            lastTwoTasks.push(nextId); if (lastTwoTasks.length > 2) lastTwoTasks.shift();
+            currentTargetId = nextId;
+            const imgName = currentTargetId.replace('pad-', '');
+            document.getElementById('q-img').src = imgName === 'azalea' ? 'jindallae.png' : imgName === 'forsythia' ? 'gaenari.png' : imgName + '.png';
+            document.getElementById('q-name').innerText = flowerInfo[currentTargetId].name;
+            document.getElementById('central-question').style.display = 'block';
+            document.getElementById(currentTargetId).classList.add('active-target');
+        }
+
+        function toggleFS() { const container = document.getElementById('game-container'); if (!document.fullscreenElement) container.requestFullscreen(); else document.exitFullscreen(); }
+        function showPopup(x, y, txt, col) { const p = document.createElement('div'); p.className = 'score-popup'; p.innerText = txt; p.style.color = col; p.style.left = x + 'px'; p.style.top = y + 'px'; document.getElementById('game-container').appendChild(p); setTimeout(() => p.remove(), 600); }
+
+        function endGame() {
+            isGameRunning = false; bgm.pause(); flashBg.style.display = 'none';
+            alert(`참 잘했어요! 🌸 꽃을 ${score}송이나 모았어요!`);
+            saveScore(score); showRanking();
+        }
+
+        // 랭킹 저장 및 표시
+        function saveScore(newScore) {
+            let ranks = JSON.parse(localStorage.getItem('flowerRanks') || '[]');
+            const name = prompt("이름을 입력하세요:", "어린이");
+            ranks.push({ name: name || "익명", score: newScore });
+            ranks.sort((a, b) => b.score - a.score);
+            localStorage.setItem('flowerRanks', JSON.stringify(ranks.slice(0, 5)));
+        }
+
+        function showRanking() {
+            const ranks = JSON.parse(localStorage.getItem('flowerRanks') || '[]');
+            const list = document.getElementById('rank-list');
+            list.innerHTML = ranks.map((r, i) => `<div class="rank-item"><span>${i+1}등 ${r.name}</span> <span>${r.score}송이</span></div>`).join('');
+            document.getElementById('ranking-panel').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
