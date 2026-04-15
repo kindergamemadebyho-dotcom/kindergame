@@ -116,8 +116,8 @@ iframe { width:100%; height:100%; border:none; }
 </div>
 
 <div id="downloadArea" style="display: none; width: 95%; margin: 0 auto 10px auto; text-align: right;">
-    <a href="foodwokr.png" download="foodwokr.png" style="display: inline-block; padding: 10px 20px; background: #FF9AA2; color: white; text-decoration: none; border-radius: 15px; font-family: 'Jua'; font-size: 1.1em; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);">
-        🖨️ 활동지 다운로드
+    <a id="downloadLink" href="#" download="" style="display: inline-block; padding: 10px 20px; background: #FF9AA2; color: white; text-decoration: none; border-radius: 15px; font-family: 'Jua'; font-size: 1.1em; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);">
+        🖨️ 활동지/도안 다운로드
     </a>
 </div>
 
@@ -135,13 +135,26 @@ function loadGame(url, btn, guideUrl){
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
 
-    // 버튼을 누를 때마다 해당 게임의 가이드 주소로 정확히 업데이트됩니다.
+    // 가이드 주소 업데이트
     currentGuideUrl = guideUrl;
 
     const downloadArea = document.getElementById('downloadArea');
+    const downloadLink = document.getElementById('downloadLink');
+
+    // 1. 딸기 게임(game7)일 때 다운로드 버튼 표시
     if(url === 'game7/game7_strawberry.html') {
         downloadArea.style.display = 'block';
-    } else {
+        downloadLink.href = 'foodwokr.png'; // 기존 파일명
+        downloadLink.setAttribute('download', '음식_활동지.png');
+    } 
+    // 2. 봄 꽃 펌프 놀이(game11)일 때 다운로드 버튼 표시 (추가된 부분)
+    else if(url === 'game11/game11_pump.html') {
+        downloadArea.style.display = 'block';
+        downloadLink.href = 'spring.zip'; // 준비하신 파일명으로 변경하세요!
+        downloadLink.setAttribute('download', '봄꽃펌프_발판도안.zip');
+    } 
+    // 3. 그 외 게임은 다운로드 버튼 숨기기
+    else {
         downloadArea.style.display = 'none';
     }
 }
