@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>🌸 봄 꽃 펌프 진짜 최종 피날레 🌸</title>
+    <title>🌸 봄 꽃 펌프 진짜 최종 피날레 (+) 🌸</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&family=Nanum+Gothic:wght@700&display=swap');
         body { font-family: 'Nanum Gothic', sans-serif; text-align: center; background-color: #fff0f5; margin: 0; overflow: hidden; color: #333; }
@@ -15,25 +15,33 @@
         
         #countdown-display { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 500; font-size: 150px; font-weight: bold; color: #ffff00; text-shadow: 0 0 30px #ff69b4; display: none; pointer-events: none; }
         .info-bar { position: absolute; top: 15px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; z-index: 100; visibility: hidden; }
-        .info-box { font-size: 24px; font-weight: bold; background: white; color: #ff1493; padding: 8px 25px; border-radius: 50px; border: 3px solid #ffb6c1; }
+        .info-box { font-size: 72px; font-weight: bold; background: white; color: #ff1493; padding: 10px 30px; border-radius: 80px; border: 3px solid #ffb6c1; }
         
-        #central-question { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); z-index: 50; display: none; text-align: center; background: #ffffff; border: 10px solid #ffb6c1; padding: 10px; border-radius: 40px; width: 420px; height: 420px; box-shadow: 0 0 40px rgba(255,182,193,0.9); }
+        #central-question { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 50; display: none; text-align: center; background: #ffffff; border: 10px solid #ffb6c1; padding: 10px; border-radius: 40px; width: 620px; height: 620px; box-shadow: 0 0 40px rgba(255,182,193,0.9); }
         #central-question img { width: 100%; height: 85%; object-fit: contain; }
 
-        /* 발판 배치 */
+        /* 십자(+) 발판 배치 수정 */
         .pad-guide { position: absolute; width: 105px; height: 105px; border-radius: 15px; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; visibility: hidden; }
-        #pad-azalea { top: 125px; left: 212px; } #pad-dandelion { top: 125px; left: 322px; } #pad-cherry { top: 235px; left: 267px; } #pad-forsythia { top: 345px; left: 212px; } #pad-magnolia { top: 345px; left: 322px; }
-        .pad-guide.active-target { border: 4px solid #ffff00; background: rgba(255,255,0,0.3); }
+        .pad-guide img { width: 85px; height: 85px; object-fit: contain; }
+
+        #pad-cherry { top: 187px; left: 267px; }       /* 가운데 (벚꽃) */
+        #pad-azalea { top: 60px; left: 267px; }        /* 상 (진달래) */
+        #pad-forsythia { bottom: 40px; left: 267px; }  /* 하 (개나리) */
+        #pad-dandelion { top: 187px; left: 60px; }      /* 좌 (민들레) */
+        #pad-magnolia { top: 187px; right: 60px; }     /* 우 (목련) */
+
+        .pad-guide.active-target { border: 4px solid #ffff00; background: rgba(255,255,0,0.3); animation: bounce 1.2s infinite; }
+        @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 
         /* 반짝임 효과 레이어 */
         #flash-bg { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 40; display: none; }
-        #fullscreen-btn { position: absolute; bottom: 10px; right: 10px; z-index: 500; opacity: 0.6; padding: 5px 15px; font-size: 12px; }
+        #fullscreen-btn { position: absolute; bottom: 20px; right: 20px; z-index: 500; opacity: 0.8; padding: 15px 30px; font-size: 20px; }
         
         #waiting-msg { position: absolute; top: 10px; left: 10px; z-index: 200; background: rgba(255,255,255,0.9); padding: 15px; border-radius: 20px; border: 3px solid #ff69b4; width: 200px; text-align: left; display: none; }
         .status-item { font-size: 13px; margin-bottom: 3px; color: #ff4444; } .status-item.ok { color: #00cc00; }
         
         .rank-item { padding: 5px; border-bottom: 1px dashed #ffb6c1; display: flex; justify-content: space-between; font-size: 18px; }
-        .score-popup { position: absolute; font-size: 50px; font-weight: bold; z-index: 100; animation: fadeUp 0.6s forwards; pointer-events: none; }
+        .score-popup { position: absolute; font-size: 150px; font-weight: bold; z-index: 100; animation: fadeUp 0.6s forwards; pointer-events: none; }
         @keyframes fadeUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-80px); } }
     </style>
 </head>
@@ -58,7 +66,10 @@
         </div>
 
         <div id="menu-panel">
-            <h2 style="font-family:'Nanum Pen Script'; font-size:45px; margin:0;">🌸 봄 꽃 펌프 설정</h2>
+            <h2 style="font-family:'Nanum Pen Script'; font-size:45px; margin:0;">
+                🌸 봄 꽃 펌프<br>
+                <span style="font-size:25px;">(꽉 찬 화면으로 즐겨주세요)</span>
+            </h2>
             <div style="margin:20px 0; text-align:left;">
                 <label>놀이 시간: </label><select id="time-select" style="width:100%; padding:5px;"><option value="60">1분</option><option value="120">2분</option></select><br><br>
                 <label>난이도: </label><select id="diff-select" style="width:100%; padding:5px;"><option value="easy">쉬움</option><option value="normal">보통</option><option value="hard">어려움 (감점)</option></select>
@@ -79,7 +90,11 @@
             </div>
         </div>
 
-        <div id="pad-azalea" class="pad-guide"><img src="jindallae.png"></div><div id="pad-dandelion" class="pad-guide"><img src="dandelion.png"></div><div id="pad-cherry" class="pad-guide"><img src="cherry.png"></div><div id="pad-forsythia" class="pad-guide"><img src="gaenari.png"></div><div id="pad-magnolia" class="pad-guide"><img src="magnolia.png"></div>
+        <div id="pad-cherry" class="pad-guide"><img src="cherry.png"></div>
+        <div id="pad-azalea" class="pad-guide"><img src="jindallae.png"></div>
+        <div id="pad-forsythia" class="pad-guide"><img src="gaenari.png"></div>
+        <div id="pad-dandelion" class="pad-guide"><img src="dandelion.png"></div>
+        <div id="pad-magnolia" class="pad-guide"><img src="magnolia.png"></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js"></script>
@@ -89,7 +104,6 @@
         const bgm = document.getElementById('bgm'), flashBg = document.getElementById('flash-bg'), waitingMsg = document.getElementById('waiting-msg');
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-        // 효과음 생성 (삑, 띠, 띵)
         function playSound(freq, duration, type='sine', vol=0.2) {
             const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
             osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
@@ -101,7 +115,14 @@
         let isGameRunning = false, isSetupMode = false, score = 0, timeLeft = 60, currentTargetId = null, isAnswered = false;
         let lastTwoTasks = [], emergencyMode = false;
 
-        const flowerInfo = { 'pad-azalea': { name: '진달래', x: 212, y: 125 }, 'pad-dandelion': { name: '민들레', x: 322, y: 125 }, 'pad-cherry': { name: '벚꽃', x: 267, y: 235 }, 'pad-forsythia': { name: '개나리', x: 212, y: 345 }, 'pad-magnolia': { name: '목련', x: 322, y: 345 } };
+        /* JS 내부 좌표를 십자(+) 위치로 동기화 */
+        const flowerInfo = { 
+            'pad-cherry': { name: '벚꽃', x: 267, y: 187 },     // 중앙
+            'pad-azalea': { name: '진달래', x: 267, y: 60 },    // 상
+            'pad-forsythia': { name: '개나리', x: 267, y: 335 }, // 하 (480-40-105)
+            'pad-dandelion': { name: '민들레', x: 60, y: 187 },   // 좌
+            'pad-magnolia': { name: '목련', x: 475, y: 187 }    // 우 (640-60-105)
+        };
         const zoneIds = Object.keys(flowerInfo), readyStatus = { 'pad-azalea': false, 'pad-dandelion': false, 'pad-cherry': false, 'pad-forsythia': false, 'pad-magnolia': false };
 
         const selfieSegmentation = new SelfieSegmentation({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${file}`});
@@ -133,12 +154,11 @@
         function autoStartCountdown() {
             isSetupMode = false; waitingMsg.style.display = 'none';
             let count = 3; const cd = document.getElementById('countdown-display'); cd.style.display = 'block'; cd.innerText = count;
-            // 카운트다운 효과음 (띠)
             playSound(440, 0.2, 'sine', 0.3);
             const timer = setInterval(() => {
                 count--;
                 if (count > 0) { cd.innerText = count; playSound(440, 0.2, 'sine', 0.3); }
-                else { clearInterval(timer); cd.style.display = 'none'; playSound(880, 0.5, 'sine', 0.4); startGame(); } // 시작 효과음 (띵)
+                else { clearInterval(timer); cd.style.display = 'none'; playSound(880, 0.5, 'sine', 0.4); startGame(); }
             }, 1000);
         }
 
@@ -150,15 +170,11 @@
             const timer = setInterval(() => {
                 timeLeft--;
                 document.getElementById('timer').innerText = `0${Math.floor(timeLeft/60)}:${(timeLeft%60).toString().padStart(2, '0')}`;
-                
-                // 시간이 1/6 이하 남았을 때 (긴급 모드)
                 if (timeLeft <= totalTime / 6 && timeLeft > 0) {
                     bgm.playbackRate = 1.5; emergencyMode = true;
-                    // 빨간색 반짝임 효과
                     flashBg.style.backgroundColor = 'rgba(255, 0, 0, 0.3)';
                     flashBg.style.display = (timeLeft % 2 === 0) ? 'block' : 'none';
                 }
-
                 if (timeLeft <= 0) { clearInterval(timer); endGame(); }
             }, 1000);
             nextStage();
@@ -168,7 +184,7 @@
             const z = flowerInfo[currentTargetId];
             if (fx > z.x && fx < z.x + 105 && fy > z.y && fy < z.y + 105) {
                 isAnswered = true; score++; document.getElementById('score').innerText = score;
-                playSound(1000, 0.15, 'square', 0.3); // 정답 효과음 (삑)
+                playSound(1000, 0.15, 'square', 0.3);
                 showPopup(fx, fy, '+1', '#ffff00');
                 flashBg.style.backgroundColor = 'white'; flashBg.style.display = 'block';
                 setTimeout(() => { if(!emergencyMode) flashBg.style.display = 'none'; }, 100);
@@ -199,7 +215,6 @@
             saveScore(score); showRanking();
         }
 
-        // 랭킹 저장 및 표시
         function saveScore(newScore) {
             let ranks = JSON.parse(localStorage.getItem('flowerRanks') || '[]');
             const name = prompt("이름을 입력하세요:", "어린이");
