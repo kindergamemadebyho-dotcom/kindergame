@@ -36,15 +36,16 @@ function setup() {
     video.size(640, 480);
     video.hide();
 
-    // ml5 v1.0 방식: handPose (P가 대문자)
-    handpose = ml5.handPose(video, () => {
-        modelLoaded = true;
-        console.log("모델 준비 완료!");
-    });
+// [수정된 코드 삽입]
+handpose = ml5.handPose(video, () => {
+    modelLoaded = true;
+    console.log("모델 준비 완료!");
+});
 
-    handpose.on("results", results => {
-        predictions = results;
-    });
+// v1.x 버전은 on 대신 detectStart를 사용하여 실시간 감지를 시작합니다.
+handpose.detectStart(video, (results) => {
+    predictions = results;
+});
 
     loadRankings();
 }
@@ -136,17 +137,24 @@ function drawPlayScreen() {
     if (timeLeft <= 0) { gameOver(); return; }
 
     // v1.x 버전용 손가락 좌표 인식 로직
-    if (predictions && predictions.length > 0) {
-        let hand = predictions[0];
-        let indexFinger = hand.index_finger_tip; // 최신 버전의 좌표 체계
-        
+// [수정된 코드 삽입]
+if (predictions && predictions.length > 0) {
+    let hand = predictions[0];
+    
+    // ml5 v1.x에서 검지 끝(index_finger_tip)은 keypoints 배열의 8번입니다.
+    let indexFinger = hand.keypoints[8]; 
+    
+    if (indexFinger) {
         let targetX = map(indexFinger.x, 0, 640, width, 0);
         let targetY = map(indexFinger.y, 0, 480, 0, height);
         
         smoothX = lerp(smoothX, targetX, 0.4);
         smoothY = lerp(smoothY, targetY, 0.4);
-        drawBrush(smoothX, smoothY);
     }
+    // 칫솔 그리기는 if문 밖이 아니라 좌표가 잡혔을 때만 그리거나 
+    // smoothX, Y를 그대로 사용하여 호출하면 됩니다.
+    drawBrush(smoothX, smoothY);
+}
 
     handleGerms();
     renderEffects();
