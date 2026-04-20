@@ -136,30 +136,31 @@ function drawPlayScreen() {
     }
     if (timeLeft <= 0) { gameOver(); return; }
 
-    // v1.x 버전용 손가락 좌표 인식 로직
-// [수정된 코드 삽입]
-if (predictions && predictions.length > 0) {
-    let hand = predictions[0];
-    
-    // ml5 v1.x에서 검지 끝(index_finger_tip)은 keypoints 배열의 8번입니다.
-    let indexFinger = hand.keypoints[8]; 
-    
-    if (indexFinger) {
-        let targetX = map(indexFinger.x, 0, 640, width, 0);
-        let targetY = map(indexFinger.y, 0, 480, 0, height);
+    // 1. 손가락 좌표 업데이트 로직 (ml5 v1.x 대응)
+    if (predictions && predictions.length > 0) {
+        let hand = predictions[0];
+        // index_finger_tip은 keypoints 8번
+        let indexFinger = hand.keypoints[8]; 
         
-        smoothX = lerp(smoothX, targetX, 0.4);
-        smoothY = lerp(smoothY, targetY, 0.4);
+        if (indexFinger) {
+            // 카메라 반전(Mirror)에 맞춘 매핑
+            let targetX = map(indexFinger.x, 0, 640, width, 0);
+            let targetY = map(indexFinger.y, 0, 480, 0, height);
+            
+            smoothX = lerp(smoothX, targetX, 0.4);
+            smoothY = lerp(smoothY, targetY, 0.4);
+        }
     }
-    // 칫솔 그리기는 if문 밖이 아니라 좌표가 잡혔을 때만 그리거나 
-    // smoothX, Y를 그대로 사용하여 호출하면 됩니다.
-    drawBrush(smoothX, smoothY);
-}
 
+    // 2. 칫솔 그리기 (좌표가 업데이트된 후 호출)
+    drawBrush(smoothX, smoothY);
+
+    // 3. 세균 처리 및 UI (smoothX, Y를 기준으로 충돌 판정)
     handleGerms();
     renderEffects();
     drawCuteUI(timeLeft);
 }
+
 
 function handleGerms() {
     for (let i = germs.length - 1; i >= 0; i--) {
