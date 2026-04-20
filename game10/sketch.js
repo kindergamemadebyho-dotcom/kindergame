@@ -19,32 +19,62 @@ let bossSpawned = false;
 let highScores = [];
 const MAX_RANKINGS = 5;
 
+// sketch.js 상단 수정
 function preload() {
-    teethImg = loadImage('teeth.png');
-    bubbleImg = loadImage('bubble.png'); 
-    goldImg = loadImage('gold.png'); 
-    for (let i = 0; i < 3; i++) {
-        germImgs[i] = loadImage(`germ${i+1}.png`);
+    // 이미지 로드 시 에러 발생을 방지하기 위한 예외 처리 (선택 사항)
+    try {
+        teethImg = loadImage('teeth.png');
+        bubbleImg = loadImage('bubble.png'); 
+        goldImg = loadImage('gold.png'); 
+        for (let i = 0; i < 3; i++) {
+            germImgs[i] = loadImage(`germ${i+1}.png`);
+        }
+    } catch (e) {
+        console.error("이미지를 불러올 수 없습니다. 경로를 확인하세요.");
+    }
+}
+
+// handleGerms 함수 내 이미지 출력 부분 수정 (이미지 없을 때 대비)
+function handleGerms() {
+    for (let i = germs.length - 1; i >= 0; i--) {
+        let g = germs[i];
+        let size = g.isBoss ? width * 0.25 : width * 0.12; 
+        let shake = g.isHitting ? sin(frameCount * 0.8) * (PI / 20) : 0;
+
+        push();
+        imageMode(CENTER);
+        translate(g.x, g.y);
+        rotate(shake);
+        
+        let img = g.isBoss ? goldImg : germImgs[g.type];
+        
+        // 이미지 로딩 실패 시 도형으로 대체 (디버깅용)
+        if (img && img.width > 0) {
+            image(img, 0, 0, size, size);
+        } else {
+            fill(g.isBoss ? "gold" : "purple");
+            ellipse(0, 0, size); 
+        }
+        pop();
+        
+        // ... 이하 동일
     }
 }
 
 function setup() {
-    // 캔버스를 브라우저 창 크기에 맞게 생성합니다.
     createCanvas(windowWidth, windowHeight);
-    
     video = createCapture(VIDEO);
-    video.size(640, 480); // 내부 처리를 위한 비디오 사이즈는 유지
+    video.size(640, 480);
     video.hide();
 
-    const options = { 
-        flipHorizontal: false, 
-        detectionConfidence: 0.6
-    };
-    
-    handpose = ml5.handpose(video, options, () => {
-        modelLoaded = true;
-        console.log("Model Ready");
-    });
+    const options = { flipHorizontal: false, detectionConfidence: 0.6 };
+
+    // 외부 구글 서버가 아닌, 선생님의 사이트 내부 경로에서 모델을 가져옵니다.
+// sketch.js 44번 줄 수정
+handpose = ml5.handpose(video, options, '/models/handpose/model.json', () => {
+    modelLoaded = true;
+    console.log("로컬 모델 로딩 성공!");
+});
 
     handpose.on("predict", results => {
         predictions = results;
