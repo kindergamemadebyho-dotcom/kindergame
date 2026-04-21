@@ -22,7 +22,7 @@ body { font-family: 'Jua', sans-serif; background:#f5f5f5; text-align:center; ma
 .banner-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .banner-btns { display: flex; gap: 8px; flex-shrink: 0; }
 
-/* ⭐ 가이드 팝업창 (구글 슬라이드 암베드용) */
+/* ⭐ 가이드 팝업창 */
 #guideOverlay {
     display: none;
     position: fixed;
@@ -87,32 +87,39 @@ iframe { width:100%; height:100%; border:none; }
 <h1>🎮 유치원의 하루</h1>
 
 <div class="top-menu">
-    <button class="category-btn active" onclick="showCategory('basic', this)">📚 기본놀이</button>
-    <button class="category-btn" onclick="showCategory('creative', this)">🎨 창의놀이</button>
-    <button class="category-btn" onclick="showCategory('health', this)">🪥 안전 및 생활</button>
+    <button class="category-btn active" onclick="showCategory('transition', this)">⏰ 전이 놀이</button>
+    <button class="category-btn" onclick="showCategory('physical', this)">🏃 신체 놀이</button>
+    <button class="category-btn" onclick="showCategory('mathscience', this)">🧪 수·과학 놀이</button>
+    <button class="category-btn" onclick="showCategory('safety', this)">🚨 안전 놀이</button>
+    <button class="category-btn" onclick="showCategory('language', this)">📖 언어 놀이</button>
 </div>
 
-<div id="basic" class="tab-menu category">
+<div id="transition" class="tab-menu category">
     <button class="tab-btn active" onclick="loadGame('game1/game1_timer.html', this, 'https://docs.google.com/presentation/d/e/2PACX-1vQFYcbES22awYKp_hQHsxmLAZ7MjdLMIRFu5q33bBYHHcpdJXFZJiIjOXVE8iNQmzW3RKCeU9QEYkcr/pubembed?start=false&loop=false&delayms=3000')">🐰 정리 타이머</button>
-    <button class="tab-btn" onclick="loadGame('game3/game3_memory.html', this, 'https://docs.google.com/presentation/d/e/2PACX-1vTbc2WhSJNK19EmAlEY_qsM6-b2CCRdZBWPdcG-TGKlpgK406DYY9-oeXCKlbnlFuHsR9jxcFlK_OS1/pubembed?start=false&loop=false&delayms=3000')">❤️ 메모리 카드</button>
-    <button class="tab-btn" onclick="loadGame('game4/game4_puzzle.html', this, 'https://docs.google.com/presentation/d/e/2PACX-1vQTaIbxiczQzHekGvFYJeXHzaEnk8fWGT2rBOJBsqTh9-mB1wPdtlqLnS2fYtIfrWOQvdO7B9si7aCI/pubembed?start=false&loop=false&delayms=3000')">🧩 퍼즐 놀이</button>
     <button class="tab-btn" onclick="loadGame('game8/game8_roulette.html', this, 'https://docs.google.com/presentation/d/e/2PACX-1vQLLXKyrQ5FBo7vhEzhfG2y1nY1gC3ntefbVzsYnA-gyoxTgQ4NRhE0fFyVXlQPc-ZGSnOn9KYHWn7W/pubembed?start=false&loop=false&delayms=3000')">🎈 룰렛 놀이</button>
-<button class="tab-btn" onclick="loadGame('game12/game12_crossgame.html', this, '여기에_구글주소_넣기')">👾이름 크로스 게임</button>
-<button class="tab-btn" onclick="loadGame('game11/game11_pump.html', this, 'https://docs.google.com/presentation/d/e/2PACX-1vSMafpCLQaeJSBLphoT3_gibBEpG2FyDzhFbIpq1Q-Q58IpDMiZliZpuIkMivp3ftKxPNxrVHrhP7dS/pubembed?start=false&loop=false&delayms=3000')">🌺봄 꽃 펌프 놀이(웹캠필요)</button>
-</div>
-
-</div>
-
-<div id="creative" class="tab-menu category" style="display:none;">
-    <button class="tab-btn" onclick="loadGame('game5/game5_face.html', this, '여기에_구글주소_넣기')">📷 누구일까요?</button>
+   <button class="tab-btn" onclick="loadGame('game5/game5_face.html', this, '여기에_구글주소_넣기')">📷 누구일까요?</button>
     <button class="tab-btn" onclick="loadGame('game6/game6_mix.html', this, '여기에_구글주소_넣기')">🌈 얼굴 섞기</button>
+    <button class="tab-btn" onclick="loadGame('game13/game13_mbti.html', this, '여기에_구글주소_넣기')">❓유아 MBTI</button>
+</div>
+
+<div id="physical" class="tab-menu category" style="display:none;">
+    <button class="tab-btn" onclick="loadGame('game11/game11_pump.html', this, 'https://docs.google.com/presentation/d/e/2PACX-1vSMafpCLQaeJSBLphoT3_gibBEpG2FyDzhFbIpq1Q-Q58IpDMiZliZpuIkMivp3ftKxPNxrVHrhP7dS/pubembed?start=false&loop=false&delayms=3000')">🌺 봄 꽃 펌프 놀이(웹캠필요)</button>
     <button class="tab-btn" onclick="loadGame('game2/game2_pop.html', this, '여기에_구글주소_넣기')">🌸 벚꽃을 잡아라!(웹캠필요)</button>
 </div>
 
-<div id="health" class="tab-menu category" style="display:none;">
+<div id="mathscience" class="tab-menu category" style="display:none;">
+    <button class="tab-btn" onclick="loadGame('game3/game3_memory.html', this, 'https://docs.google.com/presentation/d/e/2PACX-1vTbc2WhSJNK19EmAlEY_qsM6-b2CCRdZBWPdcG-TGKlpgK406DYY9-oeXCKlbnlFuHsR9jxcFlK_OS1/pubembed?start=false&loop=false&delayms=3000')">❤️ 메모리 카드</button>
+    <button class="tab-btn" onclick="loadGame('game4/game4_puzzle.html', this, 'https://docs.google.com/presentation/d/e/2PACX-1vQTaIbxiczQzHekGvFYJeXHzaEnk8fWGT2rBOJBsqTh9-mB1wPdtlqLnS2fYtIfrWOQvdO7B9si7aCI/pubembed?start=false&loop=false&delayms=3000')">🧩 퍼즐 놀이</button>
+</div>
+
+<div id="safety" class="tab-menu category" style="display:none;">
     <button class="tab-btn" onclick="loadGame('game7/game7_strawberry.html', this, 'https://docs.google.com/presentation/d/e/2PACX-1vRgiIiOGcdpxYnQzxn-nfiLN3WLUu_85NfZiMQLU9nxUjfr3dHtA1HohbFQz_SKehwQOLNdXYextSnl/pubembed?start=false&loop=false&delayms=3000')">😋 좋은음식! 나쁜음식!(웹캠필요)</button>
     <button class="tab-btn" onclick="loadGame('game9/game9_rice.html', this, 'https://docs.google.com/presentation/d/e/2PACX-1vRglMrgAxiEg90xrBPWQkuYV08M7yyvI-raq-90wFqsdao_WwWITe50KJcku2kgv-VoSRA_vBX3Pg3B/pubembed?start=false&loop=false&delayms=3000')">🍚 오늘은 내가 영양사!</button>
     <button class="tab-btn" onclick="loadGame('game10/game10_teeth.html', this, '여기에_구글주소_넣기')">🪥 양치 대작전(공사중 입니다.)</button>
+</div>
+
+<div id="language" class="tab-menu category" style="display:none;">
+    <button class="tab-btn" onclick="loadGame('game12/game12_crossgame.html', this, '여기에_구글주소_넣기')">👾 이름 크로스 게임</button>
 </div>
 
 <div id="downloadArea" style="display: none; width: 95%; margin: 0 auto 10px auto; text-align: right;">
@@ -126,8 +133,6 @@ iframe { width:100%; height:100%; border:none; }
 </div>
 
 <script>
-// 🚨 범인 검거! 아래 주소가 예전 '음식' 주소로 되어 있어서 처음 실행 시 계속 음식이 나왔던 것입니다.
-// 새로 만드신 '정리 타이머' 구글 슬라이드 주소로 교체했습니다.
 let currentGuideUrl = 'https://docs.google.com/presentation/d/e/2PACX-1vQFYcbES22awYKp_hQHsxmLAZ7MjdLMIRFu5q33bBYHHcpdJXFZJiIjOXVE8iNQmzW3RKCeU9QEYkcr/pubembed?start=false&loop=false&delayms=3000';
 
 function loadGame(url, btn, guideUrl){
@@ -135,25 +140,21 @@ function loadGame(url, btn, guideUrl){
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
 
-    // 가이드 주소 업데이트
     currentGuideUrl = guideUrl;
 
     const downloadArea = document.getElementById('downloadArea');
     const downloadLink = document.getElementById('downloadLink');
 
-    // 1. 딸기 게임(game7)일 때 다운로드 버튼 표시
     if(url === 'game7/game7_strawberry.html') {
         downloadArea.style.display = 'block';
-        downloadLink.href = 'foodwokr.png'; // 기존 파일명
+        downloadLink.href = 'foodwokr.png';
         downloadLink.setAttribute('download', '음식_활동지.png');
     } 
-    // 2. 봄 꽃 펌프 놀이(game11)일 때 다운로드 버튼 표시 (추가된 부분)
     else if(url === 'game11/game11_pump.html') {
         downloadArea.style.display = 'block';
-        downloadLink.href = 'spring.zip'; // 준비하신 파일명으로 변경하세요!
+        downloadLink.href = 'spring.zip';
         downloadLink.setAttribute('download', '봄꽃펌프_발판도안.zip');
     } 
-    // 3. 그 외 게임은 다운로드 버튼 숨기기
     else {
         downloadArea.style.display = 'none';
     }
@@ -161,7 +162,6 @@ function loadGame(url, btn, guideUrl){
 
 function openGuide() {
     if(currentGuideUrl && !currentGuideUrl.includes('여기에_')) {
-        // 이제 currentGuideUrl에 담긴 '정리 타이머' 주소가 iframe에 들어갑니다.
         document.getElementById('guideFrame').src = currentGuideUrl;
         document.getElementById('guideOverlay').style.display = 'block';
     } else {
@@ -174,43 +174,29 @@ function closeGuide() {
     document.getElementById('guideFrame').src = ""; 
 }
 
-//// ... 기존 함수들(loadGame, openGuide, closeGuide) 뒤에 이어서 작성하세요 ...
-
-function closeGuide() {
-    document.getElementById('guideOverlay').style.display = 'none';
-    document.getElementById('guideFrame').src = ""; 
-}
-
-// 여기서부터 추가하시면 됩니다! 👇
-
-// 1. 카테고리(기본/창의/안전) 전환 함수
 function showCategory(categoryId, btn) {
-    // 모든 카테고리 메뉴를 숨김
     const categories = document.querySelectorAll('.category');
     categories.forEach(cat => {
         cat.style.display = 'none';
     });
 
-    // 선택한 카테고리만 보임 (flex 레이아웃 유지)
     const targetCategory = document.getElementById(categoryId);
     if (targetCategory) {
         targetCategory.style.display = 'flex';
     }
 
-    // 상단 버튼 색상(active 클래스) 변경
     document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 }
 
-// 2. 전체화면 모드 전환 함수
 function toggleFullscreen() {
     const elem = document.getElementById('gameContainer');
     if (!document.fullscreenElement) {
         if (elem.requestFullscreen) {
             elem.requestFullscreen();
-        } else if (elem.webkitRequestFullscreen) { /* Safari */
+        } else if (elem.webkitRequestFullscreen) {
             elem.webkitRequestFullscreen();
-        } else if (elem.msRequestFullscreen) { /* IE11 */
+        } else if (elem.msRequestFullscreen) {
             elem.msRequestFullscreen();
         }
     } else {
