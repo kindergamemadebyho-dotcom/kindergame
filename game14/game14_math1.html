@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>정글 수학 달리기 - 최종 완성판</title>
+    <title>정글 수학 달리기 - TTS AI 가이드</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <script src="https://unpkg.com/ml5@0.12.2/dist/ml5.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.sound.min.js"></script>
@@ -48,6 +48,18 @@ let animalImages = [], currentAnimal = null;
 const BASE_W = 1280, BASE_H = 720;
 const LOCK_TIME = 90, SELECT_THRESHOLD = 60; 
 
+// --- [TTS 전용 함수] ---
+function speak(text) {
+  // 음성 중첩 방지를 위해 이전 음성 취소
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'ko-KR';
+  utterance.pitch = 1.2; // 아이들이 좋아하는 약간 높은 톤
+  utterance.rate = 1.1;  // 시원시원한 속도
+  window.speechSynthesis.speak(utterance);
+}
+
+// --- [2] 파일 로드 ---
 function preload() {
   imgBG = loadImage('bg.png'); 
   imgVineL = loadImage('vine_1.png'); imgVineR = loadImage('vine_r.png');
@@ -70,6 +82,7 @@ function setup() {
   textFont('Jua');
 }
 
+// --- [3] 메인 루프 ---
 function draw() {
   background(THEME.primary);
   if (imgBG) image(imgBG, 0, 0, width, height);
@@ -97,7 +110,10 @@ function draw() {
 
 function updateGameLogic() {
   gameFrames--;
-  if (gameFrames <= 0) gameState = "END";
+  if (gameFrames <= 0) {
+      if (gameState !== "END") speak("정글 탈출 성공! 정말 대단해!");
+      gameState = "END";
+  }
   if (poses.length > 0) {
     let pose = poses[0].pose;
     if (gameState === "RUNNING") runDetection(pose);
@@ -110,7 +126,12 @@ function runDetection(pose) {
   let cY = (pose.leftShoulder.y + pose.rightShoulder.y) / 2;
   if (abs(cY - lastShoulderY) > 10) gauge += 1.3;
   lastShoulderY = cY;
-  if (gauge >= 100) { gauge = 100; generateQuiz(); gameState = "SELECT"; quizStartTime = frameCount; }
+  if (gauge >= 100) { 
+      gauge = 100; 
+      generateQuiz(); 
+      gameState = "SELECT"; 
+      quizStartTime = frameCount; 
+  }
 }
 
 function generateQuiz() {
@@ -123,6 +144,10 @@ function generateQuiz() {
   answer = operator === "+" ? num1 + num2 : num1 - num2;
   options = [answer, answer + floor(random(1, 3)), abs(answer - floor(random(1, 3)))].sort(() => random() - 0.5);
   selectedIdx = -1; selectTimer = 0;
+
+  // [TTS] 문제 읽어주기
+  const opText = (operator === "+") ? "더하기" : "빼기";
+  speak(`${num1} ${opText} ${num2}는 무엇일까요?`);
 }
 
 function handleAnimations() {
@@ -142,7 +167,11 @@ function handleAnimations() {
   }
 }
 
-function resetToRunning() { isStoneBroken = false; stoneAlpha = 255; stoneScale = 1; gauge = 0; punchCount = 0; gameState = "RUNNING"; }
+function resetToRunning() { 
+    isStoneBroken = false; stoneAlpha = 255; stoneScale = 1; gauge = 0; punchCount = 0; 
+    gameState = "RUNNING"; 
+    speak("다시 신나게 달려보자!");
+}
 
 function drawHUD() {
   noStroke(); fill(THEME.secondary); rect(width * 0.1, 30, width * 0.8, 25, 12);
@@ -188,9 +217,7 @@ function drawSelectionUI() {
   }
 }
 
-// [핵심 보완] 돌맹이 및 인식 존 위치 변경: 돌맹이(가로중앙) -> 인식존(돌맹이 위) -> 문구(맨밑)
 function drawStrikeUI() {
-  // 1. 돌맹이 (화면 가로 중앙 기준 위쪽, 자연스러운 시선 높이)
   let stoneCenterY = height * 0.52;
   push(); imageMode(CENTER); tint(255, stoneAlpha); 
   if (imgStone) image(imgStone, width/2, stoneCenterY, 800 * stoneScale, 600 * stoneScale);
@@ -198,17 +225,13 @@ function drawStrikeUI() {
   text(`${punchCount} / ${answer}`, width/2, stoneCenterY + 30); 
   pop();
 
-  // 2. 통합 인식 존 (돌맹이 바로 위, 가슴 높이 부근)
   let zoneX = width/2, zoneY = height * 0.28, zoneSize = 250;
   push();
-  fill(255, 255, 200, 80); noStroke(); 
-  ellipse(zoneX, zoneY, zoneSize + 50); // 연한 배경 구역
-  stroke(THEME.gold); strokeWeight(8); noFill();
-  ellipse(zoneX, zoneY, zoneSize); // 메인 타격 목표 원
+  fill(255, 255, 200, 80); noStroke(); ellipse(zoneX, zoneY, zoneSize + 50); 
+  stroke(THEME.gold); strokeWeight(8); noFill(); ellipse(zoneX, zoneY, zoneSize); 
   textSize(50); text("🎯", zoneX, zoneY + 5);
   pop();
 
-  // 3. 안내 문구 (화면 맨 하단)
   fill(THEME.gold); noStroke(); textSize(35); 
   text("🎯 과녁을 향해 주먹을 '쾅!' 내지르세요!", width/2, height * 0.9); 
 }
@@ -219,17 +242,27 @@ function checkSelection(pose) {
   let pY = map((pose.leftHip.y + pose.rightHip.y)/2, 0, 480, 0, height);
   let found = -1;
   for (let i = 0; i < 3; i++) if (dist(pX, pY, width/6+i*(width/3), height*0.75) < 120) found = i;
-  if (found !== -1 && selectedIdx === found) { if (++selectTimer >= SELECT_THRESHOLD) { 
-    feedbackType = options[selectedIdx] === answer ? "O" : "X";
-    feedbackTimer = 25; 
-    gameState = feedbackType === "O" ? "ACTION" : "RUNNING"; if (feedbackType === "X") gauge = 0; selectTimer = 0; } 
+  if (found !== -1 && selectedIdx === found) { 
+    if (++selectTimer >= SELECT_THRESHOLD) { 
+      if (options[selectedIdx] === answer) {
+          feedbackType = "O";
+          feedbackTimer = 25; 
+          gameState = "ACTION";
+          speak("정답이야! 이제 바위를 시원하게 부숴보자!");
+      } else {
+          feedbackType = "X";
+          feedbackTimer = 25;
+          gauge = 0;
+          gameState = "RUNNING";
+          speak("아쉬워! 다시 한번 달려볼까?");
+      }
+      selectTimer = 0;
+    } 
   } else { selectedIdx = found; selectTimer = 0; }
 }
 
-// [로직 보완] 변경된 통합 원형 인식 구역 좌표 반영
 function checkPunchAction(pose) {
   if (isStoneBroken) return;
-  // 변경된 좌표 (setup 함수 밖이라 직접 계산하거나 고정값 사용)
   let zoneX = width/2, zoneY = height * 0.28, zoneRadius = 150; 
   let hands = [
     {x: map(pose.leftWrist.x, 0, 640, width, 0), y: map(pose.leftWrist.y, 0, 480, 0, height), side: 'L'},
@@ -237,7 +270,6 @@ function checkPunchAction(pose) {
   ];
   hands.forEach(h => {
     fill(255, 0, 0); noStroke(); ellipse(h.x, h.y, 30);
-    // 원과의 거리 계산을 통한 충돌 감지
     let d = dist(h.x, h.y, zoneX, zoneY);
     if (d < zoneRadius) {
       if (h.side === 'L' && leftPunchReady) { punchCount++; leftPunchReady = false; if(soundPunch.isLoaded()) soundPunch.play(); stoneScale = 1.2; }
@@ -246,8 +278,11 @@ function checkPunchAction(pose) {
       if (h.side === 'L') leftPunchReady = true; if (h.side === 'R') rightPunchReady = true;
     }
   });
-  stoneScale = lerp(stoneScale, 1, 0.1);
-  if (punchCount >= answer) { isStoneBroken = true; if(soundBreak.isLoaded()) soundBreak.play(); }
+  if (punchCount >= answer) { 
+      isStoneBroken = true; 
+      if(soundBreak.isLoaded()) soundBreak.play(); 
+      speak("와! 바위를 부수고 정글을 통과했어!");
+  }
 }
 
 function drawAnimalEvent() {
@@ -284,12 +319,14 @@ function mousePressed() {
     if (mouseY > menuY + 155 && mouseY < menuY + 205) {
       if (mouseX > width/2 - 5 && mouseX < width/2 + 85) level = "새싹";
       else if (mouseX > width/2 + 90 && mouseX < width/2 + 180) level = "꽃잎";
-      else if (mouseX > width/2 + 165 && mouseX < width/2 + 255) level = "열매";
+      else if (mouseX > width/2 + 185 && mouseX < width/2 + 275) level = "열매";
     }
     if (mouseX > width/2 - 125 && mouseX < width/2 + 125 && mouseY > menuY + 360 && mouseY < menuY + 430) {
       if (getAudioContext().state !== 'running') { userStartAudio(); }
       gameMinutes = parseInt(document.getElementById('timeInput').value) || 1;
-      gameFrames = gameMinutes * 60 * 60; gameState = "RUNNING";
+      gameFrames = gameMinutes * 60 * 60; 
+      gameState = "RUNNING";
+      speak("정글 모험을 시작합니다! 열심히 달려보세요!");
     }
   } else if (gameState === "END") gameState = "MENU";
 }
