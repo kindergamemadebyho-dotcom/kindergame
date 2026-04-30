@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>말랑말랑 숫자 친구들</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF6B6B; --secondary: #4D96FF; --accent: #FFD93D;
+            --fever: #FF4757; --bg-start: #E0F7FA; --bg-end: #FCE4EC;
+        }
+        body { 
+            margin: 0; background: linear-gradient(135deg, var(--bg-start), var(--bg-end)); 
+            font-family: 'Noto Sans KR', sans-serif; overflow: hidden; touch-action: none;
+        }
+
+        #setup-screen, #ranking-screen {
+            position: fixed; inset: 0; background: rgba(255,255,255,0.95);
+            z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .glass-panel {
+            background: white; padding: 40px; border-radius: 40px; border: 10px solid var(--accent);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1); text-align: center; width: 85%; max-width: 550px;
+        }
+        button {
+            padding: 12px 22px; font-size: 1.1rem; margin: 5px; border-radius: 20px;
+            border: 3px solid #FFF; background: white; cursor: pointer; font-weight: 700; box-shadow: 0 4px 0 #DDD;
+        }
+        button.selected { background: var(--accent); transform: translateY(-3px); box-shadow: 0 7px 0 #E6B800; }
+        #start-btn { background: var(--primary); color: white; border: none; padding: 18px 70px; font-size: 2rem; border-radius: 100px; margin-top: 30px; box-shadow: 0 10px 0 #E84118; cursor: pointer; }
+
+        #game-header {
+            position: absolute; top: 0; left: 0; width: 100%; height: 160px;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 50px; box-sizing: border-box; pointer-events: none; z-index: 10;
+        }
+        .ui-card {
+            background: white; padding: 10px 30px; border-radius: 25px;
+            box-shadow: 0 8px 0 rgba(0,0,0,0.05); border: 2px solid #EEE; text-align: center;
+        }
+        .ui-value { font-size: 2.5rem; font-weight: 900; }
+        
+        .problem-center {
+            background: white; padding: 10px 80px; border-radius: 100px;
+            border: 6px solid #333; box-shadow: 0 10px 0 rgba(0,0,0,0.1); text-align: center;
+        }
+        #target-num { font-size: 5rem; font-weight: 900; line-height: 1; }
+        #result-display { font-size: 1.8rem; font-weight: 900; margin-top: 5px; min-height: 2.2rem; }
+
+        #combo-ui {
+            position: absolute; bottom: 40px; width: 100%; text-align: center;
+            pointer-events: none; font-size: 2.5rem; font-weight: 900; color: var(--primary);
+            text-shadow: 2px 2px 0 white; opacity: 0;
+        }
+
+        canvas { display: block; }
+        
+        @keyframes shake {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(-5px, 5px); }
+            50% { transform: translate(5px, -5px); }
+            75% { transform: translate(-5px, -5px); }
+        }
+        .shake-effect { animation: shake 0.3s; }
+        .fever-active { box-shadow: inset 0 0 100px rgba(255, 71, 87, 0.4); }
+    </style>
+</head>
+<body id="game-body">
+
+<div id="setup-screen">
+    <div class="glass-panel">
+        <h1>🍓 숫자 친구들</h1>
+        <div style="background: #F8F9FA; padding: 15px; border-radius: 30px; margin-bottom: 15px;">
+            <button class="mode-opt selected" onclick="selectOpt('mode', 'plus', this)">더하기</button>
+            <button class="mode-opt" onclick="selectOpt('mode', 'minus', this)">빼기</button>
+            <button class="mode-opt" onclick="selectOpt('mode', 'mix', this)">혼합</button>
+        </div>
+        <div style="background: #F8F9FA; padding: 15px; border-radius: 30px;">
+            <button class="time-opt selected" onclick="selectOpt('time', 60, this)">1분</button>
+            <button class="time-opt" onclick="selectOpt('time', 180, this)">3분</button>
+            <button class="time-opt" onclick="selectOpt('time', 300, this)">5분</button>
+        </div>
+        <button id="start-btn" onclick="startGame()">출발! 🚀</button>
+    </div>
+</div>
+
+<div id="ranking-screen" style="display: none;">
+    <div class="glass-panel">
+        <h1>🏆 명예의 전당</h1>
+        <div id="ranking-container"></div>
+        <button onclick="location.reload()" style="background:var(--accent); margin-top:20px;">다시 하기 🔄</button>
+    </div>
+</div>
+
+<div id="game-header">
+    <div class="ui-card"><div id="score-val" class="ui-value">0</div><div style="color:#999;font-weight:bold;">점</div></div>
+    <div class="problem-center">
+        <div id="target-num">0</div>
+        <div id="result-display"></div>
+    </div>
+    <div class="ui-card"><div id="timer-val" class="ui-value">0:00</div><div style="color:#999;font-weight:bold;">남음</div></div>
+</div>
+
+<div id="combo-ui">0 COMBO</div>
+<canvas id="gameCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const bgm = new Audio('music.mp3'); bgm.loop = true;
+    const bgImage = new Image(); bgImage.src = 'bg.png';
+    let isBgLoaded = false; bgImage.onload = () => isBgLoaded = true;
+
+    let config = { mode: 'plus', time: 60 };
+    let score = 0, timeLeft = 0, isRunning = false;
+    let combo = 0, isFever = false, feverTimer = 0;
+    let nodes = [], particles = [], path = [];
+    let startNode = null, isDrawing = false, targetValue = 0, currentMode = 'plus';
+
+    function selectOpt(type, val, btn) {
+        config[type] = val;
+        document.querySelectorAll(`.${type}-opt`).forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+    }
+
+    class Particle {
+        constructor(x, y, color, type = 'normal') {
+            this.x = x; this.y = y; this.color = color;
+            this.size = Math.random() * (type === 'fever' ? 12 : 8) + 4;
+            this.speedX = (Math.random() - 0.5) * 16;
+            this.speedY = type === 'fever' ? -Math.random() * 12 : (Math.random() - 0.5) * 16;
+            this.life = 1.0;
+        }
+        update() { this.x += this.speedX; this.y += this.speedY; this.life -= 0.025; }
+        draw() {
+            ctx.save(); ctx.globalAlpha = this.life; ctx.fillStyle = this.color;
+            ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    class Node {
+        constructor() { this.radius = 60; this.reset(); }
+        reset() {
+            this.val = Math.floor(Math.random() * 9) + 1;
+            this.color = ['#FFADAD', '#FFD6A5', '#CAFFBF', '#9BF6FF', '#A0C4FF', '#BDB2FF', '#FFC6FF'][Math.floor(Math.random()*7)];
+            this.selected = false; this.life = 3; this.shake = 0;
+            this.setRandomSafePosition();
+        }
+        setRandomSafePosition() {
+            let attempts = 0;
+            while (attempts < 200) {
+                const tx = Math.random() * (canvas.width - 240) + 120;
+                const ty = Math.random() * (canvas.height - 450) + 320;
+                if (!nodes.some(n => n !== this && Math.hypot(tx - n.x, ty - n.y) < 180)) {
+                    this.x = tx; this.y = ty; break;
+                }
+                attempts++;
+            }
+        }
+        draw() {
+            ctx.save();
+            let sx = this.x + (Math.random() - 0.5) * this.shake;
+            let sy = this.y + (Math.random() - 0.5) * this.shake;
+            ctx.translate(sx, sy);
+            ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = this.selected ? '#FFF176' : 'white'; ctx.fill();
+            ctx.strokeStyle = this.selected ? '#FBC02D' : (isFever ? `hsl(${Date.now()%360},70%,60%)` : this.color);
+            ctx.lineWidth = 10; ctx.stroke();
+            ctx.fillStyle = '#333'; ctx.font = '900 4rem "Noto Sans KR"'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(this.val, 0, 0);
+            for(let i=0; i<this.life; i++) {
+                ctx.beginPath(); ctx.arc(-18 + (i*18), 40, 5, 0, Math.PI*2);
+                ctx.fillStyle = this.color; ctx.fill();
+            }
+            ctx.restore();
+            if(this.shake > 0) this.shake *= 0.8;
+        }
+    }
+
+    function spawnNodes() { 
+        nodes = [];
+        for(let i=0; i<8; i++) nodes.push(new Node()); 
+    }
+
+    function nextProblem() {
+        // [정답 보장 로직] 모든 카드의 수명 깎기
+        nodes.forEach(n => { n.life--; if(n.life <= 0) n.reset(); });
+        
+        // 화면의 전체 노드 중 무작위 2개 다시 선정
+        const idx1 = Math.floor(Math.random() * nodes.length);
+        let idx2 = Math.floor(Math.random() * nodes.length);
+        while(idx1 === idx2) idx2 = Math.floor(Math.random() * nodes.length);
+        
+        // 정답 후보는 수명 초기화
+        nodes[idx1].life = 3; nodes[idx2].life = 3;
+
+        if (config.mode === 'mix') currentMode = Math.random() > 0.5 ? 'plus' : 'minus';
+        else currentMode = config.mode;
+
+        // 선택된 후보들의 실제 값으로 정답 계산 (정답 보장)
+        targetValue = currentMode === 'plus' ? nodes[idx1].val + nodes[idx2].val : Math.abs(nodes[idx1].val - nodes[idx2].val);
+        
+        document.getElementById('target-num').innerText = targetValue;
+        document.getElementById('result-display').innerText = ""; 
+    }
+
+    function render() {
+        if(!isRunning) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (isBgLoaded) ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+        else {
+            const g = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+            g.addColorStop(0, isFever ? '#FF9A9E' : '#E0F7FA'); g.addColorStop(1, isFever ? '#FAD0C4' : '#FCE4EC');
+            ctx.fillStyle = g; ctx.fillRect(0,0,canvas.width,canvas.height);
+        }
+        if (isFever) for(let i=0; i<2; i++) particles.push(new Particle(Math.random()*canvas.width, canvas.height, '#FF4757', 'fever'));
+        if (isDrawing && path.length > 1) {
+            ctx.beginPath(); ctx.lineWidth = 20; ctx.lineCap = 'round';
+            ctx.strokeStyle = isFever ? `hsl(${Date.now()%360},70%,60%)` : (currentMode === 'plus' ? 'rgba(255, 107, 107, 0.4)' : 'rgba(77, 150, 255, 0.4)');
+            ctx.moveTo(path[0].x, path[0].y); path.forEach(p => ctx.lineTo(p.x, p.y)); ctx.stroke();
+        }
+        particles.forEach((p, i) => { p.update(); p.draw(); if(p.life <= 0) particles.splice(i, 1); });
+        nodes.forEach(node => node.draw());
+        requestAnimationFrame(render);
+    }
+
+    function toggleFever(active) {
+        isFever = active;
+        const comboUI = document.getElementById('combo-ui');
+        if (active) {
+            document.getElementById('game-body').classList.add('fever-active');
+            comboUI.innerText = "🔥 FEVER TIME! (점수 2배!) 🔥";
+            comboUI.style.opacity = 1; feverTimer = 10;
+        } else {
+            document.getElementById('game-body').classList.remove('fever-active');
+            combo = 0; comboUI.style.opacity = 0;
+        }
+    }
+
+    function handleEnd() {
+        if(!isDrawing) return;
+        const last = path[path.length-1];
+        let end = nodes.find(n => n !== startNode && Math.hypot(n.x-last.x, n.y-last.y) < n.radius);
+        
+        if(end) {
+            const result = currentMode === 'plus' ? startNode.val + end.val : Math.abs(startNode.val - end.val);
+            const resultDisplay = document.getElementById('result-display');
+            resultDisplay.innerText = `${startNode.val} ${currentMode === 'plus' ? '+' : '-'} ${end.val} = ${result}`;
+            
+            if(result === targetValue) {
+                score += isFever ? 20 : 10; combo++;
+                resultDisplay.style.color = "#4CAF50";
+                document.getElementById('score-val').innerText = score;
+                document.getElementById('combo-ui').innerText = `${combo} COMBO!`;
+                document.getElementById('combo-ui').style.opacity = 1;
+                document.body.classList.add('shake-effect');
+                setTimeout(() => document.body.classList.remove('shake-effect'), 300);
+                if (combo >= 5 && !isFever) toggleFever(true);
+                startNode.shake = 30; end.shake = 30;
+                for(let i=0; i<30; i++) {
+                    particles.push(new Particle(startNode.x, startNode.y, startNode.color));
+                    particles.push(new Particle(end.x, end.y, end.color));
+                }
+                // 결과 표시 대기 (1초로 연장)
+                setTimeout(() => { startNode.reset(); end.reset(); nextProblem(); }, 1000);
+            } else {
+                resultDisplay.style.color = "#FF5252";
+                combo = 0; if(!isFever) document.getElementById('combo-ui').style.opacity = 0;
+                startNode.shake = 15; end.shake = 15;
+                // 결과 표시 대기 (1초로 연장)
+                setTimeout(() => { resultDisplay.innerText = ""; }, 1000);
+            }
+        }
+        nodes.forEach(n => n.selected = false); isDrawing = false; path = [];
+    }
+
+    function startGame() {
+        document.getElementById('setup-screen').style.display = 'none';
+        score = 0; timeLeft = config.time; isRunning = true; combo = 0;
+        bgm.playbackRate = 1.0; bgm.play(); resize(); spawnNodes(); nextProblem();
+        const t = setInterval(() => {
+            timeLeft--;
+            if (isFever) { feverTimer--; if(feverTimer <= 0) toggleFever(false); }
+            if (timeLeft <= 15) bgm.playbackRate = 1.25;
+            const m = Math.floor(timeLeft/60), s = timeLeft%60;
+            document.getElementById('timer-val').innerText = `${m}:${s<10?'0'+s:s}`;
+            if(timeLeft <= 0) { clearInterval(t); isRunning = false; bgm.pause(); finishGame(); }
+        }, 1000);
+        requestAnimationFrame(render);
+    }
+
+    const getPos = (e) => ({ x: e.clientX || (e.touches && e.touches[0].clientX), y: e.clientY || (e.touches && e.touches[0].clientY) });
+    window.addEventListener('mousedown', (e) => { const p = getPos(e); nodes.forEach(n => { if(Math.hypot(n.x-p.x, n.y-p.y) < n.radius) { isDrawing = true; startNode = n; n.selected = true; path = [{x:n.x, y:n.y}]; } }); });
+    window.addEventListener('mousemove', (e) => { if(!isDrawing) return; const p = getPos(e); path.push(p); nodes.forEach(n => { if(n !== startNode) n.selected = Math.hypot(n.x-p.x, n.y-p.y) < n.radius; }); });
+    window.addEventListener('mouseup', handleEnd);
+    window.addEventListener('touchstart', (e) => { const p = getPos(e); nodes.forEach(n => { if(Math.hypot(n.x-p.x, n.y-p.y) < n.radius) { isDrawing = true; startNode = n; n.selected = true; path = [{x:n.x, y:n.y}]; } }); if(isRunning) e.preventDefault(); }, {passive: false});
+    window.addEventListener('touchmove', (e) => { if(!isDrawing) return; const p = getPos(e); path.push(p); nodes.forEach(n => { if(n !== startNode) n.selected = Math.hypot(n.x-p.x, n.y-p.y) < n.radius; }); if(isRunning) e.preventDefault(); }, {passive: false});
+    window.addEventListener('touchend', handleEnd);
+
+    function finishGame() {
+        const name = prompt("참 잘했어요! 이름을 알려주세요:", "똑똑이 친구");
+        let r = JSON.parse(localStorage.getItem('math_ranks') || '[]');
+        r.push({name: name || '익명', score}); r.sort((a,b)=>b.score-a.score);
+        localStorage.setItem('math_ranks', JSON.stringify(r.slice(0,5)));
+        document.getElementById('ranking-container').innerHTML = r.slice(0,5).map((x,i)=>`<div class="ranking-item"><span>${i+1}등. ${x.name}</span><b>${x.score}점</b></div>`).join('');
+        document.getElementById('ranking-screen').style.display = 'flex';
+    }
+
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    window.onresize = resize;
+    resize();
+</script>
+</body>
+</html>
